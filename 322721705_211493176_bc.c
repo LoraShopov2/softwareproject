@@ -60,6 +60,10 @@ int main(){
             printf("%c", num);
         }
     }
+    
+    if (decimal_num == 0){
+        printf("0");
+    }
     printf("\n");
     return 0;
 }
