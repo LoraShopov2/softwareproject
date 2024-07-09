@@ -11,7 +11,7 @@ DATA d;
  struct linked_list *next;
 
 
-hj
+jsj
 
 };
 struct CLUSTER{
