@@ -10,6 +10,9 @@ struct linked_list{
 DATA d;
  struct linked_list *next;
 
+
+
+
 };
 struct CLUSTER{
 
