@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 #define MAX_LINE_LENGTH 1000
+#define EPSILON 0.001
+#define MAX_PATH 200
+
 
 
 int main(int argc, char *argv[]) {
@@ -15,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
     int K = atoi(argv[1]);
     if (argc == 4) iter = atoi(argv[2]);
-    else iter = 200;
+    else iter = MAX_PATH;
     
     if (iter <=0 || iter >= 1000){
         printf("Invalid maximum iteration!\n");
@@ -33,6 +37,12 @@ int main(int argc, char *argv[]) {
 
     typedef double coordinats[D];
     
+
+    for (int i = 0; i < N; i++) {
+        free(data[i]);
+    }
+    free(data);
+
 }
 
 
@@ -65,7 +75,8 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
                         SizeOfArray *= 2;
                         *array = (float **)realloc(*array, SizeOfArray * sizeof(float *));
                     }
-                    col = 0;
+                    if (ch == '\n') col = 0;
+                    
                 }
                 if (ch == EOF) break;
             }
@@ -74,8 +85,37 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
         }
     }
     *N = row;
-    return;
+    *D = col;
+    return 0;
 }
+
+
+
+void print_clusters(CLUSTER **cluster_list, int K, int D) {
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < D; j++) {
+            printf("%.4f", cluster_list[i]->centroid[j]);
+            if (j < D-1) {
+                printf(",");
+            }
+        }
+        printf("\n");
+    }
+}
+
+
+
+int calculate_distance(float *point_a, float *point_b,  int D){
+    float sum = 0.0;
+    float diff = 0.0;
+    for (int i = 0; i < D; i++){
+        diff = point_a[i] - point_b[i];
+        sum += diff * diff;
+    }
+    return sqrt(sum);
+}
+
+
 
 
 // Define the node structure
