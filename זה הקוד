@@ -1,0 +1,42 @@
+void updateCentroid(CLUSTER *cluster, int D, int N){
+        for (int i=0; i < D; i++){
+            double *sum = 0;
+            for( int j = 0; j < N; j++){
+                double *coordinat = cluster -> POINT_LIST -> HEAD [i][j]; 
+               sum += coordinat; 
+            }
+            sum = sum / cluster->SIZE;
+            cluster -> CENTR[i] = sum;
+        }
+    }
+
+
+
+void initiation(double **data, CLUSTER_LIST *cluster_list, int K, int N, int D){
+        for(int i = 0; i < N; i++){
+                if (cluster_list -> size != K){
+                CLUSTER *cluster = createCluster(data[i]);
+                addCluster(cluster_list, cluster);
+                }
+                else{
+                    double min_dist = 1.0/0.0;
+                    double dist = 0.0;
+                    CLUSTER *closest_clus;
+                    CLUSTER_LIST *iter = cluster_list;
+                    double** *point = data[i]; 
+                    while (iter != NULL) {
+                    dist = calculate_distance(point, iter->HEAD->CNTR);
+                    if (dist < min_dist){
+                    min_dist = dist;
+                    closest_clus = iter->HEAD;
+        }
+        addPoint(closest_clus->POINT_LIST, point);
+        updateCentroid()
+        iter = iter->next;
+
+
+            }
+            
+        }
+    
+    
