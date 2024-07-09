@@ -1,17 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 
 #define MAX_LINE_LENGTH 1000
-#define EPSILON 0.001
-#define MAX_PATH 200
 
-
+int K, iter, N, D;
+typedef struct{
+    void* 
+    } DATA;
 
 int main(int argc, char *argv[]) {
-    int K, iter, N, D;
-    float **data;
+    
+    float ***data;
     
     if (argc < 3 || argc > 4) {
         printf("An error has occurred!\n");
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
     int K = atoi(argv[1]);
     if (argc == 4) iter = atoi(argv[2]);
-    else iter = MAX_PATH;
+    else iter = 200;
     
     if (iter <=0 || iter >= 1000){
         printf("Invalid maximum iteration!\n");
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
     }
     
     file_parse(stdin, &data, &N, &D);
-
+    
     if (K <= 0 || K > N){
         printf("Invalid number of clusters\n");
         return -1;
@@ -35,16 +35,8 @@ int main(int argc, char *argv[]) {
 
 
 
-    typedef double coordinats[D];
     
-
-    for (int i = 0; i < N; i++) {
-        free(data[i]);
-    }
-    free(data);
-
 }
-
 
 
 int file_parse(FILE *file, float ***array, int *N, int *D){
@@ -75,8 +67,7 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
                         SizeOfArray *= 2;
                         *array = (float **)realloc(*array, SizeOfArray * sizeof(float *));
                     }
-                    if (ch == '\n') col = 0;
-                    
+                    col = 0;
                 }
                 if (ch == EOF) break;
             }
@@ -85,69 +76,40 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
         }
     }
     *N = row;
-    *D = col;
-    return 0;
+    return;
 }
-
-
-
-void print_clusters(CLUSTER **cluster_list, int K, int D) {
-    for (int i = 0; i < K; i++) {
-        for (int j = 0; j < D; j++) {
-            printf("%.4f", cluster_list[i]->centroid[j]);
-            if (j < D-1) {
-                printf(",");
-            }
-        }
-        printf("\n");
-    }
-}
-
-
-
-int calculate_distance(float *point_a, float *point_b,  int D){
-    float sum = 0.0;
-    float diff = 0.0;
-    for (int i = 0; i < D; i++){
-        diff = point_a[i] - point_b[i];
-        sum += diff * diff;
-    }
-    return sqrt(sum);
-}
-
-
 
 
 // Define the node structure
+typedef struct{
+    int size;
+    float** centroid;
+    float** prev;
+    CLUS_LIST clus_list ;
+
+} CLUSTER;
+
 typedef struct {
-    coordinats cor;
-    struct POINT* next;
-} POINT;
-
-
-typedef  struct  linked_list   CLUS_LIST;
- typedef  CLUS_LIST* LINK;
-POINT* createNode(coordinats point)
-{
-    POINT a;
-    a.cor = point;
-    a.next = NULL;
-}
+    float** point;
+     POINT *next;
+}POINT;
+typedef struct {
+    POINT head;
+}CLUS_LIST;
 
 //inseting the node
-void appendNode( LINK CLUS_LIST, coordinats point) {
-    LINK newPoint = createNode(point);
-    if (head==NULL) {
-        head = ( LINK )malloc( sizeof(POINT) );
-        assert( head!=NULL);
-    };
-    else if{
-        
+void appendNode( CLUS_LIST* clus_list , float** x ) {
+    if (clus_list==NULL) {
+            POINT point;
+            point 
+        clus_list.head = point;
+        assert(clus_list!=NULL);
     }
-    if (head.coordinats == NULL) {
-        head = &newPoint;
-        return he;
-    }
+    else{
+        ** tmp  = &clus_list;
+        clus_list = &point;
+        clus_list- >next = tmp;
+    
 
     struct Node* temp = *head;
     while (temp->next != NULL) {
@@ -157,23 +119,11 @@ void appendNode( LINK CLUS_LIST, coordinats point) {
 }
 }
 
+,L,L,L,LLMMMLM
+ MJL;' 
+ \ NM'
 
 
 
 
 
-
-typedef linked_list CLUST_LIST;
-typedef double[D] POINT;
-
-struct linked_list{
-DATA d;
-struct linked_list *next;
-
-
-jsj
-
-};
-struct CLUSTER{
-
-}
