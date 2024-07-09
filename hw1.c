@@ -7,57 +7,112 @@
 #define MAX_PATH 200
 
 int K, iter, N, D;
-typedef struct{
-    void* 
-    } DATA;
 
 // Define the node structure
 typedef struct{
+    CLUSTER *HEAD;
+    CLUSTER *next;
+    int size;
+}CLUSTER_LIST;
+
+typedef struct{
     int SIZE;
-    float** CENTR;
-    float** PREV;
+    double** CENTR;
+    double** PREV;
     POINT_LIST POINT_LIST;
 } CLUSTER;
 
 typedef struct {
-    float** HEAD;
-     POINT_LIST *next;
+    double** HEAD;
+    POINT_LIST *next;
+    int size;
 }POINT_LIST;
 
 //inserting the node
-void addPoint( POINT_LIST* clus_list , float** x) {
-    if (clus_list==NULL) {
+void addPoint( POINT_LIST* point_list , double** x) {
+    if (point_list == NULL) {
             POINT_LIST point;
             point.HEAD = x; 
         point.next = NULL;
-        assert(clus_list->HEAD != NULL);
+        point.size = 1;
+        assert(point_list->HEAD != NULL);//is it ok to use asert
     }
     else{
         POINT_LIST *tmp;
-        tmp = & clus_list;
+        int size = point_list->size;
+        tmp = &point_list;
         assert(tmp != NULL);
-        *clus_list->HEAD = x;
-        assert(clus_list->HEAD != NULL);
-        *clus_list->next = tmp;
+        *point_list->HEAD = x;
+        assert(point_list->HEAD != NULL);
+        *point_list->next = tmp;
+        point_list->size = ++size;
+    }   
 }
 
-     CLUSTER* cluster_list = (struct CLUSTER *)malloc(sizeof(struct CLUSTER))
-}
-
-
-    void initiation(float **data, CLUSTER** cluster_list, int K, int N, int D){
-        cluster_ptr = (struct CLUSTER *)malloc(sizeof(struct CLUSTER))
-            for(int i = 0; i < N; i++){
-                for(int j = 0; j < D; j++){
-                    if (i < K) {
-                        if (**cluster_list[i].CENTR == NULL){
-
-                        } 
-                    }
-                   if cluster_liST[i] 
-                }
-            }
+void addCluster(CLUSTER_LIST* cluster_list , CLUSTER** x) {
+    
+    if (cluster_list == NULL) {
+        CLUSTER_LIST cluster;
+        cluster.size = 1;
+        cluster.HEAD = x; 
+        cluster.next = NULL;
+        assert(cluster_list->HEAD != NULL);//is it ok to use asert
     }
+    else{
+        CLUSTER_LIST *tmp;
+        int size = cluster_list->size;
+        tmp = &cluster_list;
+        assert(tmp != NULL);
+        *cluster_list->HEAD = x;
+        assert(cluster_list->HEAD != NULL);
+        *cluster_list->next = tmp;
+        cluster_list->size = ++size;
+    }   
+}
+
+CLUSTER* createCluster(double *point){
+    CLUSTER *cluster;
+    cluster->CENTR = point;
+    POINT_LIST *point_list;
+    cluster->POINT_LIST = addPoint(point_list , point);
+    return cluster;
+}
+
+void clearCluster(){}
+
+void updateCentroid(){}
+
+
+void initiation(double **data, CLUSTER_LIST *cluster_list, int K, int N, int D){
+    
+    
+    for(int i = 0; i < N; i++){
+        if (cluster_list -> size != K){
+            CLUSTER *cluster = createCluster(data[i]);
+            addCluster(cluster_list, cluster);
+        }
+        
+        else{
+            double min_dist = 1.0/0.0;
+            double dist = 0.0;
+            CLUSTER *closest_clus;
+            CLUSTER_LIST *iter = cluster_list;
+            double** *point = data[i]; 
+            
+            while (iter != NULL) {
+                dist = calculate_distance(point, iter->HEAD->CNTR);
+                if (dist < min_dist){
+                    min_dist = dist;
+                    closest_clus = iter->HEAD;
+                }
+                iter = iter->next;
+            }
+            addPoint(closest_clus->POINT_LIST, point);
+            ;
+        }
+    }
+
+}
 
 
 int file_parse(FILE *file, float ***array, int *N, int *D){
@@ -98,7 +153,7 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
     }
     *N = row;
     *D = col;
-    return;
+    return 1;
 }
 
 
@@ -116,7 +171,7 @@ void closest_clus(double *point, CLUSTER **cluster_list, int K) {
     float min_dist = 1.0 / 0.0; // equivalent to DBL_MAX
     int index = 0;
     for (int i = 0; i < K; i++) {
-        float d = calc_distance(cluster_list[i]->centroid, point);
+        float d = calc_distance(cluster_list[i]->CENTR, point);
         if (d < min_dist) {
             min_dist = d;
             index = i;
@@ -125,11 +180,10 @@ void closest_clus(double *point, CLUSTER **cluster_list, int K) {
     update_cluster(cluster_list[index], point);
 }
 
-
 void print_clusters(CLUSTER **cluster_list, int K, int D) {
     for (int i = 0; i < K; i++) {
         for (int j = 0; j < D; j++) {
-            printf("%.4f", cluster_list[i]->centroid[j]);
+            printf("%.4f", cluster_list[i]->CENTR[j]);
             if (j < D-1) {
                 printf(",");
             }
@@ -196,8 +250,3 @@ int main(int argc, char *argv[]) {
     }
     free(data);     
 }
-
-
-
-
-
