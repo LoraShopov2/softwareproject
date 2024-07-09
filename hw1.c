@@ -1,38 +1,40 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-const int D;
-const int K;
-const int N;
-
+int main(){
+int D;
+int K;
+int N;
+typedef double coordinats[D];
 
 // Define the node structure
-struct Node{
-    int data;
-    struct Node* next;
-};
+typedef struct {
+    coordinats cor;
+    struct POINT* next;
+} POINT;
 
 
-//creating a new node
-struct Node* createNode(int data) {
-    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-    if (!newNode) {
-        printf("Memory allocation error\n");
-        return NULL;
-    }
-    newNode->data = data;
-    newNode->next = NULL;
-    return newNode;
+typedef  struct  linked_list   CLUS_LIST;
+ typedef  CLUS_LIST* LINK;
+POINT* createNode(coordinats point)
+{
+    POINT a;
+    a.cor = point;
+    a.next = NULL;
 }
 
 //inseting the node
-void appendNode(struct Node** head, int data) {
-    struct Node* newNode = createNode(data);
-    if (!newNode) return;
-
-    if (*head == NULL) {
-        *head = newNode;
-        return;
+void appendNode( LINK CLUS_LIST, coordinats point) {
+    LINK newPoint = createNode(point);
+    if (head==NULL) {
+        head = ( LINK )malloc( sizeof(POINT) );
+        assert( head!=NULL);
+    };
+    else if{
+        
+    }
+    if (head.coordinats == NULL) {
+        head = &newPoint;
+        return he;
     }
 
     struct Node* temp = *head;
@@ -41,7 +43,7 @@ void appendNode(struct Node** head, int data) {
     }
     temp->next = newNode;
 }
-
+}
 
 
 
