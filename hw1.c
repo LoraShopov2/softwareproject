@@ -33,9 +33,9 @@ void addPoint( POINT_LIST* point_list , double** x) {
     if (point_list == NULL) {
             POINT_LIST point;
             point.HEAD = x; 
-        point.next = NULL;
-        point.size = 1;
-        assert(point_list->HEAD != NULL);//is it ok to use asert
+            point.next = NULL;
+            point.size = 1;
+            assert(point_list->HEAD != NULL);//is it ok to use asert
     }
     else{
         POINT_LIST *tmp;
@@ -80,9 +80,7 @@ CLUSTER* createCluster(double *point){
 
 void clearCluster(){}
 
-void updateCentroid(CLUSTER_LIST *cluster_list, int D, int N){
-    while(cluster_list != NULL){
-        CLUSTER *cluster = cluster_list;
+void updateCentroid(CLUSTER *cluSTER, int D, int N){
         for (int i=0; i < D; i++){
             
             double *sum = 0;
@@ -122,7 +120,7 @@ void initiation(double **data, CLUSTER_LIST *cluster_list, int K, int N, int D){
                 iter = iter->next;
             }
             addPoint(closest_clus->POINT_LIST, point);
-            ;
+            updateCentroid()
         }
     }
 
