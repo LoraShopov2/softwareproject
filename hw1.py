@@ -8,101 +8,110 @@ class Cluster():
         self.centroid = centroid
         self.size = 1
         self.cluster = [centroid]
+        self.prev = [0 for i in range(len(self.centroid))]
 
+    def update_cluster(self, point):
+        self.cluster.append(point)
+        self.size +=1
 
-    def update_cluster(self, x):
-        self.cluster.append(x)
-        dist = self.update_centroid(x)
-        self.update_size()
-        return dist
+    def clear_cluster(self):
+        self.cluster = []
+        self.size = 0
 
-    def update_centroid(self, x):
-        prev = self.centroid
-        curr = []
-        size = self.size
-        for i in range(len(prev)):
-            curr_i = (prev[i] * size + x[i])/(size + 1)
-            curr.append(round(curr_i,4))
+    def update_centroid(self):
+        self.prev = self.centroid[:]
+        n = len(self.prev)
+        curr = [0 for i in range(n)]
+        for i in range(n):
+            for point in self.cluster:
+                curr[i] += point[i]
+            curr[i] /= self.size
         self.centroid = curr
-        return self.calc_distance(prev)
+        return self.calc_distance(self.prev)
 
-    def update_size(self):
-        self.size += 1
-
-    def calc_distance(self, x):
-        dist = 0
-        for i in range(len(x)):
-            dist += (x[i]-self.centroid[i])**2
+    def calc_distance(self, point):
+        dist = sum((point[i] - self.centroid[i]) ** 2 for i in range(len(point)))
         return math.sqrt(dist)
 
-def data_verify(lst):
-    K = int(lst[1])
 
-    if len(lst) == 3:
-        iter = 200
-        path = lst[2]
-    elif len(lst) == 4:
-        iter = int(lst[2])
-        path = lst[3]
-    else:
+def verify_data(args):
+    if len(args) not in [3, 4] or not path.endswith(".txt"):
         print("An error has occurred!")
         return -1, 0, 0
 
-    if path[-4:] != ".txt":
+    K = int(args[1])
+    iterations = 200 if len(args) == 3 else int(args[2])
+    path = args[2] if len(args) == 3 else args[3]
+
+    if not path.endswith(".txt"):
+        print("An error has occurred!")
         return -1, 0, 0
 
-    file = open(path, 'r')
-    data = file.readlines()
+    with open(path, 'r') as file:
+        data = [[float(num) for num in line.split(',')] for line in file]
 
     if len(data) <= K or K <= 0:
         print("Invalid number of clusters!")
         return -1, 0, 0
-    if iter >= 1000 or iter <= 0:
+    if iterations >= 1000 or iterations <= 0:
         print("Invalid maximum iteration!")
         return -1, 0, 0
 
-    iter = min(len(data)-1, iter)
+    return K, iterations, data
 
-    return K, iter, data
 
-def closest_clus(x,cluster_list):
-    min_dist = sys.maxsize
+def find_closest_clus(point,cluster_list):
+    min_dist = float('inf')
     index = 0
     K = len(cluster_list)
     for i in range(K):
-        d = cluster_list[i].calc_distance(x)
+        d = cluster_list[i].calc_distance(point)
         if d < min_dist:
             min_dist = d
             index = i
-    delta = cluster_list[index].update_cluster(x)
+    cluster_list[index].update_cluster(point)
 
-    return delta
+
 def print_clusters(cluster_list):
     for cluster in cluster_list:
-        target = ",".join([str(i) for i in cluster.centroid])
+        target = ",".join([str(round(i, 4)) for i in cluster.centroid])
+
         print(target)
-    return
+
+
+def initialize_clusters(K,data,cluster_list):
+    for i, point in enumerate(data):
+        if i < K:
+            cluster_list.append(Cluster(point))
+        else:
+            find_closest_clus(point,cluster_list)
 
 
 def main():
     cluster_list = []
-    K, iter, data = data_verify(sys.argv)
+    K, iterations, data = verify_data(sys.argv)
     if K == -1:
         return
 
-    for i in range(iter):
-        x = data[i].split(',')
-        for j in range(len(x)):
-            x[j] = round(float(x[j]),4)
-        if i < K:
-            cluster_list.append(Cluster(x))
-        else:
-            delta = closest_clus(x,cluster_list)
-            if delta <= EPSILON:
-                print_clusters(cluster_list)
-                return
+    initialize_clusters(K, data, cluster_list)
+
+    while iterations > 0:
+
+        for point in data:
+            find_closest_clus(point,cluster_list)
+
+        flag = True
+        for cluster in cluster_list:
+            if cluster.update_centroid() > EPSILON:
+                flag = False
+            cluster.clear_cluster()
+
+        if flag:
+            break
+        iterations -= 1
+
     print_clusters(cluster_list)
-    return
+
 
 if __name__ == "__main__":
     main()
