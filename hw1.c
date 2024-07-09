@@ -82,46 +82,54 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
 
 // Define the node structure
 typedef struct{
-    int size;
-    float** centroid;
-    float** prev;
-    CLUS_LIST clus_list ;
+    int SIZE;
+    float** CENTR;
+    float** PREV;
+    POINT_LIST POINT_LIST;
 
 } CLUSTER;
 
 typedef struct {
-    float** point;
-     POINT *next;
-}POINT;
-typedef struct {
-    POINT head;
-}CLUS_LIST;
+    float** HEAD;
+     POINT_LIST *next;
+}POINT_LIST;
+
 
 //inseting the node
-void appendNode( CLUS_LIST* clus_list , float** x ) {
+void addPoint( POINT_LIST* clus_list , float** x) {
     if (clus_list==NULL) {
-            POINT point;
-            point 
-        clus_list.head = point;
-        assert(clus_list!=NULL);
+            POINT_LIST point;
+            point.HEAD = x; 
+        point.next = NULL;
+        assert(clus_list->HEAD != NULL);
     }
     else{
-        ** tmp  = &clus_list;
-        clus_list = &point;
-        clus_list- >next = tmp;
-    
+        POINT_LIST *tmp;
+        tmp = & clus_list;
+        assert(tmp != NULL);
+        *clus_list->HEAD = x;
+        assert(clus_list->HEAD != NULL);
+        *clus_list->next = tmp;
 
-    struct Node* temp = *head;
-    while (temp->next != NULL) {
-        temp = temp->next;
+
+
+}
+
+     CLUSTER* cluster_list = (struct CLUSTER *)malloc(sizeof(struct CLUSTER))
+}
+    void initiation(float **data, CLUSTER** cluster_list, int K, int N, int D){
+        cluster_ptr = (struct CLUSTER *)malloc(sizeof(struct CLUSTER))
+            for(int i = 0; i < N; i++){
+                for(int j = 0; j < D; j++){
+                    if (i < K) {
+                        if (**cluster_list[i].CENTR == NULL){
+
+                        } 
+                    }
+                   if cluster_liST[i] 
+                }
+            }
     }
-    temp->next = newNode;
-}
-}
-
-,L,L,L,LLMMMLM
- MJL;' 
- \ NM'
 
 
 
