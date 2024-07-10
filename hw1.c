@@ -11,20 +11,20 @@ int K, iter, N, D;
 // Define the node structure
 typedef struct{
     CLUSTER *HEAD;
-    CLUSTER *next;
+    CLUSTER *NEXT;
     int size;
 }CLUSTER_LIST;
 
 typedef struct{
-    int SIZE;
-    double** CENTR;
+    int size;
+    double** CENTEROID;
     double** PREV;
     POINT_LIST POINT_LIST;
 } CLUSTER;
 
 typedef struct {
     double** HEAD;
-    POINT_LIST *next;
+    POINT_LIST *NEXTt;
     int size;
 }POINT_LIST;
 
@@ -33,18 +33,15 @@ void addPoint( POINT_LIST* point_list , double** x) {
     if (point_list == NULL) {
             POINT_LIST point;
             point.HEAD = x; 
-        point.next = NULL;
+        point.NEXT = NULL;
         point.size = 1;
-        assert(point_list->HEAD != NULL);//is it ok to use asert
     }
     else{
         POINT_LIST *tmp;
         int size = point_list->size;
         tmp = &point_list;
-        assert(tmp != NULL);
         *point_list->HEAD = x;
-        assert(point_list->HEAD != NULL);
-        *point_list->next = tmp;
+        *point_list->NEXT = tmp;
         point_list->size = ++size;
     }   
 }
@@ -55,7 +52,7 @@ void addCluster(CLUSTER_LIST* cluster_list , CLUSTER** x) {
         CLUSTER_LIST cluster;
         cluster.size = 1;
         cluster.HEAD = x; 
-        cluster.next = NULL;
+        cluster.NEXT = NULL;
         assert(cluster_list->HEAD != NULL);//is it ok to use asert
     }
     else{
@@ -65,63 +62,78 @@ void addCluster(CLUSTER_LIST* cluster_list , CLUSTER** x) {
         assert(tmp != NULL);
         *cluster_list->HEAD = x;
         assert(cluster_list->HEAD != NULL);
-        *cluster_list->next = tmp;
+        *cluster_list->NEXT = tmp;
         cluster_list->size = ++size;
     }   
 }
 
 CLUSTER* createCluster(double *point){
     CLUSTER *cluster;
-    cluster->CENTR = point;
+    cluster->CENTEROID = point;
     POINT_LIST *point_list;
     cluster->POINT_LIST = addPoint(point_list , point);
     return cluster;
 }
 
-void clearCluster(){}
+void clearCluster(Cluster *cluster) {
+    PointList *current = cluster->points;
+    PointList *next;
+    while (current != NULL) {
+        next = current->NEXT
+        free(current);
+        current = next;
+    }
+    cluster->points = NULL;
+    cluster->size = 0;
+}
 
-void updateCentroid(){}
+void updateCenteroid(CLUSTER *cluster, int D, int N){
+    for (int i=0; i < D; i++){
+        double *sum = 0;
+        for( int j = 0; j < N; j++){
+            double *coordinate = cluster->POINT_LIST->HEAD [i][j]; 
+            sum += coordinate; 
+        }
+        sum = sum / cluster->size;
+        cluster -> CENTEROID[i] = sum;
+    }
+}
 
 
 void initiation(double **data, CLUSTER_LIST *cluster_list, int K, int N, int D){
-    
-    
     for(int i = 0; i < N; i++){
-        if (cluster_list -> size != K){
+        if (cluster_list->size != K){
             CLUSTER *cluster = createCluster(data[i]);
             addCluster(cluster_list, cluster);
         }
-        
         else{
-            double min_dist = 1.0/0.0;
+            double min_dist = INFINITY;
             double dist = 0.0;
             CLUSTER *closest_clus;
             CLUSTER_LIST *iter = cluster_list;
             double** *point = data[i]; 
-            
             while (iter != NULL) {
-                dist = calculate_distance(point, iter->HEAD->CNTR);
+                dist = calculateDistance(point, iter->HEAD->CENTEROID);
                 if (dist < min_dist){
                     min_dist = dist;
                     closest_clus = iter->HEAD;
                 }
-                iter = iter->next;
             }
             addPoint(closest_clus->POINT_LIST, point);
-            ;
+            updateCenteroid();
+            iter = iter->next;
         }
-    }
-
+    }        
 }
 
 
-int file_parse(FILE *file, float ***array, int *N, int *D){
+void fileParse(FILE *file, double ***array, int *N, int *D){
     int row = 0, col = 0, SizeOfArray = 10;
     char line[MAX_LINE_LENGTH];
     int i = 0;
 
     // initial allocation of memory
-    *array = (float **)malloc(SizeOfArray * sizeof(float *));
+    *array = (double **)malloc(SizeOfArray * sizeof(double *));
 
     while(1){
         int ch = getchar();
@@ -131,7 +143,7 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
                 
                 //memory allocation for mew column
                 if (col == 0){
-                    (*array)[row] = (float *)malloc((*D) * sizeof(float));
+                    (*array)[row] = (double *)malloc((*D) * sizeof(double));
                 }
                 (*array)[row][col++] = atof(line);
                 i = 0;
@@ -141,7 +153,7 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
                     row++;
                     if (row >= SizeOfArray) {
                         SizeOfArray *= 2;
-                        *array = (float **)realloc(*array, SizeOfArray * sizeof(float *));
+                        *array = (double **)realloc(*array, SizeOfArray * sizeof(double *));
                     }
                     if (ch == '\n') col = 0;
                 }
@@ -153,13 +165,12 @@ int file_parse(FILE *file, float ***array, int *N, int *D){
     }
     *N = row;
     *D = col;
-    return 1;
 }
 
 
-int calculate_distance(float *point_a, float *point_b,  int D){
-    float sum = 0.0;
-    float diff = 0.0;
+int calculateDistance(double *point_a, double *point_b,  int D){
+    double sum = 0.0;
+    double diff = 0.0;
     for (int i = 0; i < D; i++){
         diff = point_a[i] - point_b[i];
         sum += diff * diff;
@@ -167,28 +178,36 @@ int calculate_distance(float *point_a, float *point_b,  int D){
     return sqrt(sum);
 }
 
-void closest_clus(double *point, CLUSTER **cluster_list, int K) {
-    float min_dist = 1.0 / 0.0; // equivalent to DBL_MAX
-    int index = 0;
-    for (int i = 0; i < K; i++) {
-        float d = calc_distance(cluster_list[i]->CENTR, point);
-        if (d < min_dist) {
-            min_dist = d;
-            index = i;
+void findClosestCluster(double *point, CLUSTER **cluster_list, int D) {
+    double minDist = INFINITY;
+    Cluster *closestCluster = NULL;
+    ClusterList *current = clusterList;
+
+    while (current != NULL) {
+        double dist = calculateDistance(point, current->HEAD->CENTEROID, D);
+        if (dist < minDist) {
+            minDist = dist;
+            closestCluster = current->head;
         }
+        current = current->next;
     }
-    update_cluster(cluster_list[index], point);
+
+    addPoint(&closestCluster->points, point);
+    closestCluster->size++;
 }
 
-void print_clusters(CLUSTER **cluster_list, int K, int D) {
-    for (int i = 0; i < K; i++) {
+
+void printClusters(ClusterList *clusterList, int D) {
+    ClusterList *current = clusterList;
+    while (current != NULL) {
         for (int j = 0; j < D; j++) {
-            printf("%.4f", cluster_list[i]->CENTR[j]);
-            if (j < D-1) {
+            printf("%.4f", current->HEAD->CENTEROID[j]);
+            if (j < D - 1) {
                 printf(",");
             }
         }
         printf("\n");
+        current = current->NEXT;
     }
 }
 
@@ -196,7 +215,7 @@ void print_clusters(CLUSTER **cluster_list, int K, int D) {
 int main(int argc, char *argv[]) {
 
     CLUSTER **cluster_list;
-    float **data;
+    double **data;
     
     if (argc < 2 || argc > 3) {
         printf("An error has occurred!\n");
@@ -211,7 +230,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     
-    file_parse(stdin, &data, &N, &D);
+    fileParse(stdin, &data, &N, &D);
     
     if (K <= 0 || K > N){
         printf("Invalid number of clusters\n");
@@ -221,21 +240,21 @@ int main(int argc, char *argv[]) {
     cluster_list = (CLUSTER**)malloc(K * sizeof(CLUSTER*));
 
 
-    initialize_cluster(K, data, cluster_list, N, D);
+    initialization(K, data, cluster_list, N, D);
     int flag = 0;
 
     
     while (iter > 0){ 
         for (int i = 0; i < N; i++) {
-            find_closest_clus(data[i], cluster_list, K);
+            findClosestCluster(data[i], cluster_list, D);
         }
         
         flag = 1;
         for (int i = 0; i < K; i++) {
-            if (update_centroid(cluster_list[i]) > EPSILON) {
+            if (updateCenteroid(cluster_list[i]) > EPSILON) {
                 flag = 0;
             }
-            clear_cluster(cluster_list[i]);
+            clearCluster(cluster_list[i]);
         }
         if (!flag) {
             break;
@@ -243,7 +262,7 @@ int main(int argc, char *argv[]) {
         iter--;
     }
 
-    print_clusters(cluster_list, K, D);
+    printClusters(cluster_list, K, D);
     
     for (int i = 0; i < N; i++) {
         free(data[i]);
