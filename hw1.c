@@ -31,8 +31,8 @@ typedef struct {
 //inserting the node
 void addPoint( POINT_LIST* point_list , double** x) {
     if (point_list == NULL) {
-            POINT_LIST point;
-            point.HEAD = x; 
+        POINT_LIST point;
+        point.HEAD = x; 
         point.NEXT = NULL;
         point.size = 1;
     }
@@ -159,9 +159,8 @@ void fileParse(FILE *file, double ***array, int *N, int *D){
                 }
                 if (ch == EOF) break;
             }
-        } else {
-            line[i++] = ch;
-        }
+        } 
+        else line[i++] = ch;
     }
     *N = row;
     *D = col;
@@ -202,9 +201,7 @@ void printClusters(ClusterList *clusterList, int D) {
     while (current != NULL) {
         for (int j = 0; j < D; j++) {
             printf("%.4f", current->HEAD->CENTEROID[j]);
-            if (j < D - 1) {
-                printf(",");
-            }
+            if (j < D - 1) printf(",");
         }
         printf("\n");
         current = current->NEXT;
@@ -251,14 +248,10 @@ int main(int argc, char *argv[]) {
         
         flag = 1;
         for (int i = 0; i < K; i++) {
-            if (updateCenteroid(cluster_list[i]) > EPSILON) {
-                flag = 0;
-            }
+            if (updateCenteroid(cluster_list[i]) > EPSILON) flag = 0;
             clearCluster(cluster_list[i]);
         }
-        if (!flag) {
-            break;
-        }
+        if (!flag) break;
         iter--;
     }
 
