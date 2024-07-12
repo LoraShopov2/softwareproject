@@ -8,24 +8,24 @@
 
 
 // Define the node structure
-typedef struct {
+typedef struct POINT_LIST{
     double *head;
-    POINT_LIST *next;
+    struct POINT_LIST *next;
     int size;
-}POINT_LIST;
+} POINT_LIST;
 
-typedef struct{
+typedef struct CLUSTER{
     double *centroid;
     double *prev;
     POINT_LIST *point_list;
     int size;
 } CLUSTER;
 
-typedef struct{
+typedef struct CLUSTER_LIST{
     CLUSTER *head;
-    CLUSTER *next;
+    struct CLUSTER_LIST *next;
     int size;
-}CLUSTER_LIST;
+} CLUSTER_LIST;
 
 int K, iter, N, D;
 
@@ -45,7 +45,7 @@ void addPoint( POINT_LIST **point_list , double *point) {
 
 void addCluster(CLUSTER_LIST **cluster_list , CLUSTER *cluster) {
     CLUSTER_LIST *tmp = (CLUSTER_LIST *)malloc(sizeof(CLUSTER_LIST));
-    tmp->cluster = cluster;
+    tmp->head = cluster;
     tmp->next = *cluster_list;
     *cluster_list = tmp;
 }
@@ -60,7 +60,7 @@ CLUSTER *createCluster(double *point, int D){
         cluster->centroid[i] = point[i];
         cluster->prev[i] = point[i];
     }
-    cluster->points = NULL;
+    cluster->point_list = NULL;
     cluster->size = 0;
     return cluster;
 }
@@ -70,7 +70,7 @@ void clearCluster(CLUSTER *cluster) {
     POINT_LIST *curr = cluster->point_list;
     POINT_LIST *next;
     while (curr != NULL) {
-        next = curr->next
+        next = curr->next;
         free(curr);
         curr = next;
     }
@@ -78,19 +78,17 @@ void clearCluster(CLUSTER *cluster) {
     cluster->size = 0;
 }
 
-
-void updatecentroid(CLUSTER *cluster, int D, int N){
+void updateCentroid(CLUSTER *cluster, int D, int N){
     for (int i=0; i < D; i++){
-        double sum = 0;
-        for( int j = 0; j < N; j++){
-            double *coordinate = cluster->point_list->head[i][j]; 
-            sum += coordinate; 
+        double sum = 0.0;
+        POINT_LIST *curr = cluster->point_list;
+        while (curr != NULL) {
+            sum += curr->head[i];
+            curr = curr->next;
         }
-        sum = sum / cluster->size;
-        cluster->centroid[i] = sum;
+        cluster->centroid[i] = sum / cluster->size;
     }
 }
-
 
 void fileParse(FILE *file, double ***array, int *N, int *D){
     int row = 0, col = 0, SizeOfArray = 10;
@@ -128,7 +126,6 @@ void fileParse(FILE *file, double ***array, int *N, int *D){
     *D = col;
 }
 
-
 void initializeClusters(double **data, CLUSTER_LIST **cluster_list, int K, int N, int D) {
     for (int i = 0; i < K; i++) {
         CLUSTER *cluster = createCluster(data[i], D);
@@ -136,8 +133,7 @@ void initializeClusters(double **data, CLUSTER_LIST **cluster_list, int K, int N
     }
 }
 
-
-int calculateDistance(double *point_a, double *point_b,  int D){
+double calculateDistance(double *point_a, double *point_b,  int D){
     double sum = 0.0;
     double diff = 0.0;
     for (int i = 0; i < D; i++){
@@ -148,40 +144,40 @@ int calculateDistance(double *point_a, double *point_b,  int D){
 }
 
 
-*CLUSTER findClosestCluster(double *point, CLUSTER **cluster_list, int D) {
+CLUSTER *findClosestCluster(double *point, CLUSTER_LIST *cluster_list, int D) {
     double minDist = INFINITY;
     CLUSTER *closestCluster = NULL;
-    CLUSTER_LIST *current = clusterList;
-    while (current != NULL) {
-        double dist = calculateDistance(point, current->head->centroid, D);
+    CLUSTER_LIST *curr = cluster_list;
+    while (curr != NULL) {
+        double dist = calculateDistance(point, curr->head->centroid, D);
         if (dist < minDist) {
             minDist = dist;
-            closestCluster = current->head;
+            closestCluster = curr->head;
         }
-        current = current->next;
+        curr = curr->next;
     }
-    return *closestCluster;
+    return closestCluster;
 }
 
 
 void addPointsToClusters(double **data, CLUSTER_LIST *cluster_list, int N, int D) {
     for (int i = 0; i < N; i++) {
         CLUSTER *cluster = findClosestCluster(data[i], cluster_list, D);
-        addPoint(&cluster->points, data[i]);
+        addPoint(&cluster->point_list, data[i]);
         cluster->size++;
     }
 }
 
 
 void printClusters(CLUSTER_LIST *clusterList, int D) {
-    CLUSTER_LIST *current = clusterList;
-    while (current != NULL) {
+    CLUSTER_LIST *curr = clusterList;
+    while (curr != NULL) {
         for (int j = 0; j < D; j++) {
-            printf("%.4f", current->head->centroid[j]);
+            printf("%.4f", curr->head->centroid[j]);
             if (j < D - 1) printf(",");
         }
         printf("\n");
-        current = current->next;
+        curr = curr->next;
     }
 }
 
@@ -213,24 +209,24 @@ int main(int argc, char *argv[]) {
     int flag = 0;
     
     while (iter > 0){ 
-        addPointsToCluster(data, cluster_list, N, D)
+        addPointsToClusters(data, cluster_list, N, D);
         flag = 1;
         CLUSTER_LIST *curr = cluster_list;
         while (curr != NULL){
             for (int i = 0; i < D; i++){
-                curr->cluster->prev[i] = curr->cluster->centroid[i];
+                curr->head->prev[i] = curr->head->centroid[i];
             }
-            updateCentroid(curr->cluster, D);
-            double diff = calculateDistance(curr->cluster->prev, curr->cluster->centroid, D)
+            updateCentroid(curr->head, D, N);
+            double diff = calculateDistance(curr->head->prev, curr->head->centroid, D);
             if (diff>EPSILON) flag = 1;
-            clearCluster(curr->cluster);
+            clearCluster(curr->head);
             curr = curr->next;
         }
         if (!flag) break;
         iter--;
     }
 
-    printClusters(cluster_list, K, D);
+    printClusters(cluster_list, D);
     
     //free memory
     for (int i = 0; i < N; i++) {
@@ -238,11 +234,12 @@ int main(int argc, char *argv[]) {
     }
     free(data);   
 
+    CLUSTER_LIST *curr = cluster_list;
     while (curr != NULL) {
-        ClusterList *next = curr->next;
-        free(curr->cluster->centroid);
-        free(curr->cluster->prev);
-        free(curr->cluster);
+        CLUSTER_LIST *next = curr->next;
+        free(curr->head->centroid);
+        free(curr->head->prev);
+        free(curr->head);
         free(curr);
         curr = next;
     }
