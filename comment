@@ -1,0 +1,7 @@
+    """A class representing a node in an AVL tree
+
+    @param key: int or None
+    @param key: key of your node
+    @type value: any
+    @param value: data of your node
+    """
