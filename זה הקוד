@@ -108,7 +108,7 @@ void fileParse(FILE *file, double ***array, int *N, int *D){
     int row = -1;
     int col = 0;
     int SizeOfArray = 1;
-    double *line = NULL;
+    double **line = NULL;
     int i = 0;
     int flag = 0;
     float num;
@@ -120,8 +120,8 @@ void fileParse(FILE *file, double ***array, int *N, int *D){
     while((ch = getchar()) != EOF){
         if (flag == 0){
             if (ch == ','){
-                *line = (double *)realloc(**line, *D * sizeof(double ));
-                **line[*D-1] = atof(*word);
+                *line = (double *)realloc(*line, *D * sizeof(double));
+                *line[*D-1] = atof(*word);
                 i =- 1;
                 D++;
             }
