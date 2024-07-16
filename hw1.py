@@ -4,20 +4,24 @@ import sys
 EPSILON = 0.001
 
 class Cluster():
+    #initiate a cluster
     def __init__(self, centroid):
         self.centroid = centroid
         self.size = 1
         self.cluster = [centroid]
-        self.prev = [0 for i in range(len(self.centroid))]
+        self.prev = [0 for i in range(len(self.centroid))]#prev_centroid
 
+    #add point to poin list in cluster
     def update_cluster(self, point):
         self.cluster.append(point)
         self.size +=1
-
+    
+    #remove all points from point list in cluster
     def clear_cluster(self):
         self.cluster = []
         self.size = 0
 
+    
     def update_centroid(self):
         self.prev = self.centroid[:]
         n = len(self.prev)
@@ -38,9 +42,10 @@ def verify_data(args):
     if len(args) not in [3, 4] or not path.endswith(".txt"):
         print("An error has occurred!")
         return -1, 0, 0
-
-    K = int(args[1])
-    iterations = 200 if len(args) == 3 else int(args[2])
+    str_K = args[1]
+    K = int(str_K)
+    str_iter = "200" if len(args) == 3 else args[2]
+    iterations = int(str_iter)
     path = args[2] if len(args) == 3 else args[3]
 
     if not path.endswith(".txt"):
@@ -50,10 +55,10 @@ def verify_data(args):
     with open(path, 'r') as file:
         data = [[float(num) for num in line.split(',')] for line in file]
 
-    if len(data) <= K or K <= 0:
+    if len(data) <= K or K <= 0 or !(str_K.isdigit()):
         print("Invalid number of clusters!")
         return -1, 0, 0
-    if iterations >= 1000 or iterations <= 0:
+    if iterations >= 1000 or iterations <= 0 !(str_iter.isdigit()):
         print("Invalid maximum iteration!")
         return -1, 0, 0
 
