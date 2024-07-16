@@ -57,7 +57,7 @@ void addCluster(CLUSTER_LIST **cluster_list , CLUSTER *cluster) {
 
 
 CLUSTER *createCluster(double *point, int D){
-    CLUSTER *cluster = malloc(sizeof(CLUSTER));
+    CLUSTER *cluster = calloc(1, sizeof(CLUSTER));
     int i;
     if (cluster == NULL){
         printf("An error has occurred!\n");
@@ -118,7 +118,7 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
     char *ch;
     char *start;
 
-    *array = (double **)malloc(sizeof(double *));
+    *array = (double **)calloc(1, sizeof(double *));
     if (*array == NULL) {
         printf("An error has occurred!\n");
         exit(1);
@@ -131,7 +131,7 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
             exit(1);
         }
         
-        (*array)[row] = (double *)malloc(100 * sizeof(double));
+        (*array)[row] = (double *)calloc(100, sizeof(double));
         if ((*array)[row] == NULL) {
             printf("An error has occurred!\n");
             exit(1);
