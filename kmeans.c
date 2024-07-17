@@ -201,67 +201,83 @@ void updateCentroid(CLUSTER *cluster, int D){
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-int dimantion(int *D){
+int *dimantion(int **D){
+    char ch;
     while((ch = getchar()) != '\n'){
         if (ch!= '\n'){
-            *D++;
+            **D++;
         }
     }
     return *D; 
 }
   void add_element(char  **word, int *size, int *capacity, char element) {
     if (*size >= *capacity) {
-        *capacity *= 2;
+        *capacity*= 2;
         *word = (char *)realloc( *word, (*capacity) * sizeof(char));
-        *word++ = &element;
-        *size++;
-        return;
-
     }
-int charToDouble(File *file, double *num, char **word, int *size , int *capacity){
-    char ch;
+    *word++ = &element;
+    *size++;
+    return;
+    }
 
-    char *word = (char *)calloc(100, sizeof(char));
-    char *start->word;
+int charToDouble(double **num){
+    char ch;
+    int size = 0;
+    int capacity =0;
+    char *word = (char *)calloc(2, sizeof(char));
+    char *start = word;
+    if (word == NULL) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    
     while (ch = getchar() != ',' || ch != '\n' || ch != EOF ){
     
-        add_element(&*word, &size, &capacity, ch);
+        add_element(&word, &size, &capacity, ch);
     }
-    add_element(&*word, &size, &capacity, '\0');
-    *num = atof(start);
-    free(*start);
+    add_element(&word, &size, &capacity, '\0');
+    **num = atof(start);
+    free(start);
     if (ch == EOF){
         return 0;
     }
     return 1;
 }
 void fileParse(FILE *file, double ***array, int *N, int *D) {
-    finddimantion(&D);
+    dimantion(&D);
     fseek(file, 0, SEEK_SET);
     int size = 0;
     int capacity =0;
     int row = 0;
     int col=0;
     char ch;
-    double num;
     int toKeep=1;
     char *word;
-    double num;
-
-    while(tokeep){
+    double *num = (double *)malloc(sizeof(double));
+    printf("121212121212121212");
+    while(toKeep){
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
-        (*array)[row] = (double *)calloc(D* sizeof(double))
+        (*array)[row] = (double *)calloc(*D ,sizeof(double));
         for (col = 0; col < *D; col++){
-            tokeep = charToDouble(&num, &*word, int *size , int *capacity);
-            (*array)[row][col] = &num;
+            toKeep = charToDouble(&num);
+            (*array)[row][col] = *num;
         }
         col = 0;
         row++;
        
     }
-    free(**word);
-    free(*num);
+    free(word);
+    free(num);
+    *N = row;
+    printf("%d ", *D);
+    for (col = 0; col < *N , col++){
+        for (row = 0; row < *D , row++){
+            printf("%f ", (*array)[col][row]);
+            printf("%d", 5);
+        }
+    }
 
+}
 
 /**
  * @brief Initializes cluster list
@@ -420,6 +436,7 @@ int main(int argc, char *argv[]) {
     int i;
     CLUSTER_LIST *curr;
     CLUSTER_LIST *next;
+    printf("j");
     
 
     if (argc < 2 || argc > 3) {
