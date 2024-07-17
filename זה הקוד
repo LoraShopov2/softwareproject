@@ -444,11 +444,14 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
         printf("An error has occurred!\n");
         exit(1);
     }
+
     if (!isInteger(argv[1])){
         printf("Invalid number of clusters\n");
         exit(1);
     }
+    
     *K = atoi(argv[1]);
+    
     if (argc == 3){ 
         *iter = atoi(argv[2]);
         if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
@@ -457,11 +460,14 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
         }
     }
     else *iter = 200;
+    
     fileParse(stdin, data, N, D);
+
     if (*N <= 0){
         printf("An error has occurred!\n");
         exit(1);
     }
+    
     if (*K <= 0 || *K > *N){
         printf("Invalid number of clusters\n");
         exit(1);
@@ -490,6 +496,8 @@ int main(int argc, char *argv[]) {
     double diff;
     int i;
     CLUSTER_LIST *curr;
+
+    printf("kaka\n");
     
     dataVerify(argc, argv, &data, &N, &D, &K, &iter);
     initializeClusters(data, &cluster_list, K, D);
@@ -510,7 +518,11 @@ int main(int argc, char *argv[]) {
         }
         iter--;
     }
+
     printClusters(cluster_list, D);
     freeMemory(&data, N, cluster_list);
+
     return 0;  
 }
+
+
