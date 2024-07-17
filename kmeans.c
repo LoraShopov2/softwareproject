@@ -222,17 +222,17 @@ int charToDouble(File *file, double *num, char **word, int *size , int *capacity
     char ch;
 
     char *word = (char *)calloc(100, sizeof(char));
-    start->word;
+    char *start->word;
     while (ch = getchar() != ',' || ch != '\n' || ch != EOF ){
     
         add_element(&*word, &size, &capacity, ch);
     }
     add_element(&*word, &size, &capacity, '\0');
     *num = atof(start);
+    free(*start);
     if (ch == EOF){
         return 0;
     }
-    free(start);
     return 1;
 }
 void fileParse(FILE *file, double ***array, int *N, int *D) {
@@ -259,7 +259,8 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
         row++;
        
     }
-
+    free(**word);
+    free(*num);
 
 
 /**
