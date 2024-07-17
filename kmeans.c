@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_LINE_LENGTH 1000
 #define EPSILON 0.001
 #define MAX_PATH 200
 
@@ -112,17 +111,14 @@ void updateCentroid(CLUSTER *cluster, int D){
 }
 
 void fileParse(FILE *file, double ***array, int *N, int *D) {
+    int MAX_LINE_LENGTH = 1000;
     int row = 0;
     int col;
     char line[MAX_LINE_LENGTH];
-    char *ch;
+    char *ch;  
     char *start;
 
-    *array = (double **)calloc(1, sizeof(double *));
-    if (*array == NULL) {
-        printf("An error has occurred!\n");
-        exit(1);
-    }
+    *array = NULL;
     
     while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
@@ -131,11 +127,24 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
             exit(1);
         }
         
-        (*array)[row] = (double *)calloc(100, sizeof(double));
+        if (row == 0){
+            col = 0;
+            ch = line;
+            while (*ch != '\0') {
+                if (*ch == ',' || *ch == '\n') {
+                    col++;
+                }
+                ch++;
+            }
+            *D = col;
+        } 
+        
+        (*array)[row] = (double *)calloc(col, sizeof(double));
         if ((*array)[row] == NULL) {
             printf("An error has occurred!\n");
             exit(1);
         }
+        
         col = 0;
         ch = line;
         start = ch;
@@ -146,9 +155,6 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
                 start = ch + 1;
             }
             ch++;
-        }
-        if (row == 0) {
-            *D = col;
         }
         row++;
     }
@@ -252,7 +258,7 @@ int main(int argc, char *argv[]) {
     
     initializeClusters(data, &cluster_list, K, D);
     
-    while (iter > 0){ 
+    while (iter > 0 && flag){ 
         addPointsToClusters(data, cluster_list, N, D);
         flag = 1;
         curr = cluster_list;
@@ -266,7 +272,6 @@ int main(int argc, char *argv[]) {
             clearCluster(curr->head);
             curr = curr->next;
         }
-        if (!flag) break;
         iter--;
     }
 
