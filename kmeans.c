@@ -197,56 +197,69 @@ void updateCentroid(CLUSTER *cluster, int D){
  * @param D Pointer to number of dimensions
  * @return None, all changed parameters are called by reference
  */
-void fileParse(FILE *file, double ***array, int *N, int *D) {
-    int MAX_LINE_LENGTH = 1000;
-    int row = 0;
-    int col;
-    char line[MAX_LINE_LENGTH];
-    char *ch;  
-    char *start;
 
-    *array = NULL;
-    
-    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
-        *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
-        if (*array == NULL) {
-            printf("An error has occurred!\n");
-            exit(1);
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+int dimantion(int *D){
+    while((ch = getchar()) != '\n'){
+        if (ch!= '\n'){
+            *D++;
         }
-        
-        if (row == 0){
-            col = 0;
-            ch = line;
-            while (*ch != '\0') {
-                if (*ch == ',' || *ch == '\n') {
-                    col++;
-                }
-                ch++;
-            }
-            *D = col;
-        } 
-        
-        (*array)[row] = (double *)calloc(col, sizeof(double));
-        if ((*array)[row] == NULL) {
-            printf("An error has occurred!\n");
-            exit(1);
-        }
-        
-        col = 0;
-        ch = line;
-        start = ch;
-        while (*ch != '\0') {
-            if (*ch == ',' || *ch == '\n') {
-                *ch = '\0'; 
-                (*array)[row][col++] = atof(start);
-                start = ch + 1;
-            }
-            ch++;
-        }
-        row++;
     }
-    *N = row;
+    return *D; 
 }
+  void add_element(char  **word, int *size, int *capacity, char element) {
+    if (*size >= *capacity) {
+        *capacity *= 2;
+        *word = (char *)realloc( *word, (*capacity) * sizeof(char));
+        *word++ = &element;
+        *size++;
+        return;
+
+    }
+int charToDouble(File *file, double *num, char **word, int *size , int *capacity){
+    char ch;
+
+    char *word = (char *)calloc(100, sizeof(char));
+    start->word;
+    while (ch = getchar() != ',' || ch != '\n' || ch != EOF ){
+    
+        add_element(&*word, &size, &capacity, ch);
+    }
+    add_element(&*word, &size, &capacity, '\0');
+    *num = atof(start);
+    if (ch == EOF){
+        return 0;
+    }
+    free(start);
+    return 1;
+}
+void fileParse(FILE *file, double ***array, int *N, int *D) {
+    finddimantion(&D);
+    fseek(file, 0, SEEK_SET);
+    int size = 0;
+    int capacity =0;
+    int row = 0;
+    int col=0;
+    char ch;
+    double num;
+    int toKeep=1;
+    char *word;
+    double num;
+
+    while(tokeep){
+        *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
+        (*array)[row] = (double *)calloc(D* sizeof(double))
+        for (col = 0; col < *D; col++){
+            tokeep = charToDouble(&num, &*word, int *size , int *capacity);
+            (*array)[row][col] = &num;
+        }
+        col = 0;
+        row++;
+       
+    }
+
 
 
 /**
