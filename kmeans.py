@@ -108,7 +108,7 @@ def verify_data(args):
     path = args[2] if len(args) == 3 else args[3]
 
     if not path.endswith(".txt"):
-        print("An error has occurred!")
+        "returns N/A as required"
         return -1, 0, 0
     
     with open(path, 'r') as file:
