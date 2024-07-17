@@ -201,14 +201,13 @@ void updateCentroid(CLUSTER *cluster, int D){
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-int *dimantion(int **D){
+void dimantion(int *D){
     char ch;
     while((ch = getchar()) != '\n'){
         if (ch!= '\n'){
-            **D++;
+            (*D)++;
         }
-    }
-    return *D; 
+    } 
 }
   void add_element(char  **word, int *size, int *capacity, char element) {
     if (*size >= *capacity) {
@@ -243,8 +242,7 @@ int charToDouble(double **num){
     }
     return 1;
 }
-void fileParse(FILE *file, double ***array, int *N, int *D) {
-    dimantion(&D);
+void fileParse(FILE *file, double ***array, int *N, int D) {
     fseek(file, 0, SEEK_SET);
     int size = 0;
     int capacity =0;
@@ -254,7 +252,6 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
     int toKeep=1;
     char *word;
     double *num = (double *)malloc(sizeof(double));
-    printf("121212121212121212");
     while(toKeep){
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
         (*array)[row] = (double *)calloc(*D ,sizeof(double));
@@ -269,9 +266,8 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
     free(word);
     free(num);
     *N = row;
-    printf("%d ", *D);
-    for (col = 0; col < *N , col++){
-        for (row = 0; row < *D , row++){
+    for (col = 0; col < *N ; col++){
+        for (row = 0; row < *D ; row++){
             printf("%f ", (*array)[col][row]);
             printf("%d", 5);
         }
@@ -437,6 +433,8 @@ int main(int argc, char *argv[]) {
     CLUSTER_LIST *curr;
     CLUSTER_LIST *next;
     printf("j");
+    dimantion(&D);
+    printf()
     
 
     if (argc < 2 || argc > 3) {
