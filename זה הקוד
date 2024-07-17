@@ -248,7 +248,6 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
     *N = row;
 }
 
-
 /**
  * @brief Initializes cluster list
  * 
@@ -431,6 +430,7 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr){
  * If there are, program exits and prints the relevant error message.
  * If there aren't, program puts values of K, N, D and iter to the relevant location from the input pointer argument.
  * 
+ * @param file Stream to an input file
  * @param argc Num of arguments given by the user
  * @param argv All user input
  * @param data Pointer to 2d matrix float array with data
@@ -439,8 +439,8 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr){
  * @param iter Pointer to nnumber of iterations
  * @return None, all changed parameters are called by reference.
  */
-void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
-    if (argc < 2 || argc > 3) {
+void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
+    if (argc < 3 || argc > 4) {
         printf("An error has occurred!\n");
         exit(1);
     }
@@ -452,7 +452,7 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
     
     *K = atoi(argv[1]);
     
-    if (argc == 3){ 
+    if (argc == 4){ 
         *iter = atoi(argv[2]);
         if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
             printf("Invalid maximum iteration!\n");
@@ -461,7 +461,7 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
     }
     else *iter = 200;
     
-    fileParse(stdin, data, N, D);
+    fileParse(file, data, N, D);
 
     if (*N <= 0){
         printf("An error has occurred!\n");
@@ -488,23 +488,21 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
 int main(int argc, char *argv[]) {
     int K;
     int N;
-    int D = 1;
+    int D = 0;
     int iter;
     CLUSTER_LIST *cluster_list = NULL;
     double **data;
-    int flag = 0;
+    int flag;
     double diff;
     int i;
     CLUSTER_LIST *curr;
-
-    printf("kaka\n");
     
-    dataVerify(argc, argv, &data, &N, &D, &K, &iter);
+    dataVerify(stdin, argc, argv, &data, &N, &D, &K, &iter);
     initializeClusters(data, &cluster_list, K, D);
     
-    while (iter > 0 && flag){ 
+    while (iter > 0){ 
         addPointsToClusters(data, cluster_list, N, D);
-        flag = 1;
+        flag = 0;
         curr = cluster_list;
         while (curr != NULL){
             for (i = 0; i < D; i++){
@@ -516,6 +514,7 @@ int main(int argc, char *argv[]) {
             clearCluster(curr->head);
             curr = curr->next;
         }
+        if (!flag) break;
         iter--;
     }
 
@@ -524,5 +523,4 @@ int main(int argc, char *argv[]) {
 
     return 0;  
 }
-
 
