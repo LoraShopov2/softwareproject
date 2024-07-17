@@ -6,7 +6,7 @@
  * 
  * @author 322721705 and 211493176
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -200,19 +200,18 @@ void updateCentroid(CLUSTER *cluster, int D){
 void fileParse(FILE *file, double ***array, int *N, int *D) {
     int row = 0;
     int col;
-    char line[1000];
+    char *line = NULL;
+    size_t line_length = 0;
     char *ch;  
     char *start;
-
     *array = NULL;
     
-    while (fgets(line, 1000, file) != NULL) {
+    while (getline(&line, &line_length, file) != -1) {
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
         if (*array == NULL) {
             printf("An error has occurred!\n");
             exit(1);
-        }
-        
+        }    
         if (row == 0){
             col = 0;
             ch = line;
@@ -224,13 +223,11 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
             }
             *D = col;
         } 
-        
         (*array)[row] = (double *)calloc(col, sizeof(double));
         if ((*array)[row] == NULL) {
             printf("An error has occurred!\n");
             exit(1);
         }
-        
         col = 0;
         ch = line;
         start = ch;
@@ -245,7 +242,9 @@ void fileParse(FILE *file, double ***array, int *N, int *D) {
         row++;
     }
     *N = row;
+    free(line);
 }
+
 
 /**
  * @brief Initializes cluster list
@@ -392,6 +391,7 @@ int isInteger(const char *arg){
 }
 
 
+
 /**
  * @brief Frees all memory allocated in the program
  * 
@@ -402,11 +402,9 @@ int isInteger(const char *arg){
  * @param curr Pointer to a linked list of clusters
  * @return None
  */
-
 void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
     CLUSTER_LIST *next;
     int i;
-    
     if (*data != NULL) {
         for (i = 0; i < N; i++) {
             free((*data)[i]);
@@ -414,7 +412,6 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
         free(*data);
         *data = NULL; 
     }
-    
     while (curr != NULL) {
         next = curr->next;
         if (curr->head != NULL) {
@@ -446,7 +443,7 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
  * @return None, all changed parameters are called by reference.
  */
 void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
-    if (argc < 3 || argc > 4) {
+    if (argc < 2 || argc > 3) {
         printf("An error has occurred!\n");
         exit(1);
     }
@@ -458,7 +455,7 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
     
     *K = atoi(argv[1]);
 
-    if (argc == 4){ 
+    if (argc == 3){ 
         *iter = atoi(argv[2]);
         if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
             printf("Invalid maximum iteration!\n");
@@ -473,7 +470,6 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
         printf("An error has occurred!\n");
         exit(1);
     }
-
     if (*K <= 0 || *K > *N){
         printf("Invalid number of clusters\n");
         exit(1);
