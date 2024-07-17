@@ -66,6 +66,28 @@ class Cluster():
 
 
 """
+Verifies argument is an int
+@type arg: String
+@param arg: A string of input from user to verify
+@rtype: Touple(int, int)
+@returns: First int return 1 if arg is not an integer and 1 if it is, second returns the arg in integer form.
+""" 
+def isInt(arg):
+    try:
+        return 0, int(arg)
+    except:
+        try:
+            float_arg = float(arg)
+            int_arg = int(arg[0 : arg.find(".")])
+            if (float_arg) == int_arg:
+                return 0, int_arg
+            else:
+                return 1, 0
+        except:
+            return 1, 0
+    
+
+"""
 Verifies argument validity: correct number of arguments, correct input for K, iter, file.
 Parses file from txt file to a 2d matrix of coordinates.
 @type args: List[String]
@@ -77,26 +99,32 @@ def verify_data(args):
     if len(args) not in [3, 4]:
         print("An error has occurred!")
         return -1, 0, 0
-    str_K = args[1]
-    K = int(str_K)
-    str_iter = "200" if len(args) == 3 else args[2]
-    iterations = int(str_iter)
+    err_K,K = isInt(args[1])
+    err_iter = 0
+    if len(args) == 3:
+        iterations = 200
+    else:
+        err_iter, iterations = isInt(args[2])
     path = args[2] if len(args) == 3 else args[3]
 
     if not path.endswith(".txt"):
         print("An error has occurred!")
         return -1, 0, 0
-
+    
     with open(path, 'r') as file:
         data = [[float(num) for num in line.split(',')] for line in file]
 
-    if len(data) <= K or K <= 0 or not str_K.isdigit():
+    if len(data) == 0:
+        print("An error has occurred!")
+        return -1, 0, 0
+    if len(data) <= K or K <= 0 or err_K:
         print("Invalid number of clusters!")
         return -1, 0, 0
-    if iterations >= 1000 or iterations <= 0 or not str_iter.isdigit():
+    if iterations >= 1000 or iterations <= 0 or err_iter:
         print("Invalid maximum iteration!")
         return -1, 0, 0
-
+    
+    
     return K, iterations, data
 
 
