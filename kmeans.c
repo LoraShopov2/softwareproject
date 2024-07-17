@@ -391,6 +391,7 @@ int isInteger(const char *arg){
         if (*arg < '0'|| *arg > '9'){
             return 0;
         }
+
         *arg++;
     }
     return 1;
