@@ -198,16 +198,15 @@ void updateCentroid(CLUSTER *cluster, int D){
  * @return None, all changed parameters are called by reference
  */
 void fileParse(FILE *file, double ***array, int *N, int *D) {
-    int MAX_LINE_LENGTH = 1000;
     int row = 0;
     int col;
-    char line[MAX_LINE_LENGTH];
+    char line[1000];
     char *ch;  
     char *start;
 
     *array = NULL;
     
-    while (fgets(line, MAX_LINE_LENGTH, file) != NULL) {
+    while (fgets(line, 1000, file) != NULL) {
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
         if (*array == NULL) {
             printf("An error has occurred!\n");
@@ -393,7 +392,6 @@ int isInteger(const char *arg){
 }
 
 
-
 /**
  * @brief Frees all memory allocated in the program
  * 
@@ -404,19 +402,27 @@ int isInteger(const char *arg){
  * @param curr Pointer to a linked list of clusters
  * @return None
  */
-void freeMemory(double ***data, int N, CLUSTER_LIST *curr){
-    int i;
+
+void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
     CLUSTER_LIST *next;
+    int i;
     
-    for (i = 0; i < N; i++) {
-        free(data[i]);
+    if (*data != NULL) {
+        for (i = 0; i < N; i++) {
+            free((*data)[i]);
+        }
+        free(*data);
+        *data = NULL; 
     }
-    free(data);
+    
     while (curr != NULL) {
         next = curr->next;
-        free(curr->head->centroid);
-        free(curr->head->prev);
-        free(curr->head);
+        if (curr->head != NULL) {
+            free(curr->head->centroid);
+            free(curr->head->prev);
+            clearCluster(curr->head);
+            free(curr->head);
+        }
         free(curr);
         curr = next;
     }
@@ -451,7 +457,7 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
     }
     
     *K = atoi(argv[1]);
-    
+
     if (argc == 4){ 
         *iter = atoi(argv[2]);
         if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
@@ -467,7 +473,7 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
         printf("An error has occurred!\n");
         exit(1);
     }
-    
+
     if (*K <= 0 || *K > *N){
         printf("Invalid number of clusters\n");
         exit(1);
@@ -523,4 +529,3 @@ int main(int argc, char *argv[]) {
 
     return 0;  
 }
-
