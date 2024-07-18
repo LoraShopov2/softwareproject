@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define EPSILON 0.001
+#define EPSILON 0.0001
 #define MAX_PATH 200
 
 /**
@@ -24,6 +24,7 @@
 typedef struct POINT_LIST{
     double *head;
     struct POINT_LIST *next;
+    int size;
 } POINT_LIST;
 
 
@@ -67,9 +68,14 @@ void addPoint( POINT_LIST **point_list , double *point) {
     if (tmp == NULL) {
             printf("An error has occurred!\n");
             exit(1);
-        }
+    }
     tmp->head = point;
     tmp->next = *point_list;
+    if (*point_list == NULL) {
+        tmp->size = 1;
+    } else {
+        tmp->size = (*point_list)->size + 1;
+    }
     *point_list = tmp;
 }   
 
@@ -112,12 +118,12 @@ CLUSTER *createCluster(double *point, int D){
         printf("An error has occurred!\n");
         exit(1);
     }
-    cluster->centroid = (double *)calloc(D+1, sizeof(double));
+    cluster->centroid = (double *)calloc(D + 1, sizeof(double));
      if (cluster->centroid == NULL){
         printf("An error has occurred!\n");
         exit(1);
     }
-    cluster->prev = (double *)calloc(D+1, sizeof(double));
+    cluster->prev = (double *)calloc(D + 1, sizeof(double));
      if (cluster->prev == NULL){
         printf("An error has occurred!\n");
         exit(1);
@@ -125,7 +131,6 @@ CLUSTER *createCluster(double *point, int D){
     for (i = 0; i < D; i++) {
         cluster->prev[i] = (double) point[i];
         cluster->centroid[i] = (double) point[i];
-        
     }
     cluster->point_list = NULL;
     cluster->size = 0;
@@ -188,8 +193,7 @@ void updateCentroid(CLUSTER *cluster, int D){
  * @return None, changed parameter is called by reference.
  */
 
-void dimantion(int *D){
-    
+void dimension(int *D){
     char ch;
     while((ch = getchar()) != '\n'){
         if (ch == ','){
@@ -199,6 +203,7 @@ void dimantion(int *D){
     (*D)++;
     fseek(stdin, 0, SEEK_SET);
 }
+
 
 /**
  * @brief Converts the numerical characters written in the file to double-point numbers.
@@ -494,13 +499,13 @@ void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, 
 
     if (argc == 3){ 
         *iter = atoi(argv[2]);
-        if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
+        if (!isInteger(argv[2]) || *iter <= 0 || *iter >= 1000){
             printf("Invalid maximum iteration!\n");
             exit(1);
         }
     }
     else *iter = 200;
-    dimantion(D);
+    dimension(D);
     fileParse(data, N, *D);
     if (*N <= 0){
         printf("An error has occurred!\n");
@@ -556,11 +561,9 @@ int main(int argc, char *argv[]) {
         if (!flag) break;
         iter--;
     }
-   
 
     printClusters(cluster_list,D);
     freeMemory(&data, N, cluster_list);
 
     return 0;  
 }
-
