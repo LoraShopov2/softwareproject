@@ -1,3 +1,4 @@
+
 /**
  * @file kmeans.c
  * @brief Calculating a k mean clusters from a given input file
@@ -6,7 +7,7 @@
  * 
  * @author 322721705 and 211493176
  */
-#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -186,63 +187,112 @@ void updateCentroid(CLUSTER *cluster, int D){
 
 
 /**
+ * @brief Calculates the dimension of the given vectors
+ * 
+ * This function tallies the coordinates listed in the first line.
+ * @param D pointer to parameter D
+ * @return None, changed parameter is called by reference.
+ */
+
+void dimantion(int *D){
+    
+    char ch;
+    while((ch = getchar()) != '\n'){
+        if (ch == ','){
+            (*D)++;
+        }
+    } 
+    (*D)++;
+    fseek(stdin, 0, SEEK_SET);
+}
+
+/**
+ * @brief Converts the numerical characters written in the file to double-point numbers.
+ * 
+ * This function first initializes an array to store the characters representing the double in the file.
+ * Then, using dynamic memory allocation, it stores all characters of the number.
+ * When calling atof, we convert the array to a double.
+ * @param num pointer to double that will later on be added to our data(matrix).
+ * @return 1- we didnt finish reading all the file. 
+ *         0- else.
+ */
+int charToDouble(double *num) {
+    char ch;
+    int size = 0;
+    int capacity = 10;
+    char *word = (char *)calloc(capacity, sizeof(char));
+    if (word == NULL) {
+        printf("Memory allocation failed in charToDouble\n");
+        exit(1);
+    }
+
+    while ((ch = getchar()) != ',' && ch != '\n' && ch != EOF) {
+        if (size >= capacity - 1) {
+            capacity *= 2;
+            word = (char *)realloc(word, capacity * sizeof(char));
+            if (word == NULL) {
+                printf("Memory allocation failed in charToDouble (realloc)\n");
+                exit(1);
+            }
+        }
+        word[size++] = ch;
+    }
+    word[size] = '\0';
+    *num = atof(word);
+    free(word);
+
+    if (ch == EOF) {
+        return 0;
+    }
+    return 1;
+}
+
+
+/**
  * @brief Parses file input
  * 
- * This function a file from stdin, an initiated array, pointer to N and a pointer to D.
- * It iterates through all array lines and parses the char array stream into a 2d float matrix containing all information from input file.
- * 
- * @param file Input from stdin
+ * The function builds a matrix of N vectors, each of D dimensions. 
+ * It utilizes dynamic memory allocation for the matrix.
  * @param array An initiated 2d array pointer
  * @param N Pointer to number of lines in file
- * @param D Pointer to number of dimensions
+ * @param D dimensions value
  * @return None, all changed parameters are called by reference
  */
-void fileParse(FILE *file, double ***array, int *N, int *D) {
+void fileParse(double ***array, int *N, int D) {
+    int i=0;
     int row = 0;
+    double num;
     int col;
-    char *line = NULL;
-    size_t line_length = 0;
-    char *ch;  
-    char *start;
-    *array = NULL;
-    
-    while (getline(&line, &line_length, file) != -1) {
+    int toKeep = 1;
+    *array = (double **)calloc(10, sizeof(double));
+    while (toKeep) {
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
         if (*array == NULL) {
-            printf("An error has occurred!\n");
-            exit(1);
-        }    
-        if (row == 0){
-            col = 0;
-            ch = line;
-            while (*ch != '\0') {
-                if (*ch == ',' || *ch == '\n') {
-                    col++;
-                }
-                ch++;
-            }
-            *D = col;
-        } 
-        (*array)[row] = (double *)calloc(col, sizeof(double));
-        if ((*array)[row] == NULL) {
-            printf("An error has occurred!\n");
+            printf("Memory allocation failed in fileParse (array realloc)\n");
             exit(1);
         }
-        col = 0;
-        ch = line;
-        start = ch;
-        while (*ch != '\0') {
-            if (*ch == ',' || *ch == '\n') {
-                *ch = '\0'; 
-                (*array)[row][col++] = atof(start);
-                start = ch + 1;
-            }
-            ch++;
+       
+        (*array)[row] = (double *)calloc(D, sizeof(double));
+        if ((*array)[row] == NULL) {
+            printf("Memory allocation failed in fileParse (row calloc)\n");
+            exit(1);
+        }
+        i=0;
+        for (col = 0; col < D; col++) {
+            toKeep = charToDouble(&num);
+             printf("%i ",i++);
+            if(toKeep==0){
+                printf("%i ",col);
+               if (col < D){
+                printf("Invalid number of Dimension\n");
+                exit(1);
+                } 
+            } break;
+            (*array)[row][col] = num;
         }
         row++;
     }
-    *N = row;
-    free(line);
+    *N = row-1;
 }
 
 
@@ -391,7 +441,6 @@ int isInteger(const char *arg){
 }
 
 
-
 /**
  * @brief Frees all memory allocated in the program
  * 
@@ -402,9 +451,11 @@ int isInteger(const char *arg){
  * @param curr Pointer to a linked list of clusters
  * @return None
  */
+
 void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
     CLUSTER_LIST *next;
     int i;
+    
     if (*data != NULL) {
         for (i = 0; i < N; i++) {
             free((*data)[i]);
@@ -412,6 +463,7 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
         free(*data);
         *data = NULL; 
     }
+    
     while (curr != NULL) {
         next = curr->next;
         if (curr->head != NULL) {
@@ -452,7 +504,7 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
         printf("Invalid number of clusters\n");
         exit(1);
     }
-    
+
     *K = atoi(argv[1]);
 
     if (argc == 3){ 
@@ -463,13 +515,13 @@ void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int 
         }
     }
     else *iter = 200;
-    
-    fileParse(file, data, N, D);
-
+    dimantion(D);
+    fileParse(data, N, *D);
     if (*N <= 0){
         printf("An error has occurred!\n");
         exit(1);
     }
+
     if (*K <= 0 || *K > *N){
         printf("Invalid number of clusters\n");
         exit(1);
@@ -497,6 +549,7 @@ int main(int argc, char *argv[]) {
     int flag;
     double diff;
     int i;
+    int j;
     CLUSTER_LIST *curr;
     
     dataVerify(stdin, argc, argv, &data, &N, &D, &K, &iter);
@@ -519,9 +572,11 @@ int main(int argc, char *argv[]) {
         if (!flag) break;
         iter--;
     }
+   
 
-    printClusters(cluster_list, D);
+    printClusters(cluster_list,D);
     freeMemory(&data, N, cluster_list);
 
     return 0;  
 }
+
