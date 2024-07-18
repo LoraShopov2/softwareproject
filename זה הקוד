@@ -281,13 +281,8 @@ void fileParse(double ***array, int *N, int D) {
         for (col = 0; col < D; col++) {
             toKeep = charToDouble(&num);
              printf("%i ",i++);
-            if(toKeep==0){
-                printf("%i ",col);
-               if (col < D){
-                printf("Invalid number of Dimension\n");
-                exit(1);
-                } 
-            } break;
+            if(toKeep==0)exit(1);
+              break;
             (*array)[row][col] = num;
         }
         row++;
@@ -457,7 +452,7 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
     int i;
     
     if (*data != NULL) {
-        for (i = 0; i < N; i++) {
+        for (i = 0; i < N+1; i++) {
             free((*data)[i]);
         }
         free(*data);
