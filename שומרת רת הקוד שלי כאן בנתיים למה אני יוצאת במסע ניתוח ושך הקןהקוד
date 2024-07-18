@@ -210,7 +210,7 @@ void dimantion(int *D){
  * @brief converts number writen in file to double.
  * 
  * This fuction first initialize an array to store the characters that represents the double in the file.
- * Thenby useing dynemic memorry allocation we store all characters og the number and by
+ * Thenby useing dynemic memorry allocation we store all numbers of the double. by
  * calling atof we convert the array to daouble.  
  * @param num pointer to double that will later be added to our data(matrix).
  * @return 1-if we didnt finish reading all the file. 0- else.
