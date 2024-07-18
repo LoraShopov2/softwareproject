@@ -280,9 +280,7 @@ void fileParse(double ***array, int *N, int D) {
         i=0;
         for (col = 0; col < D; col++) {
             toKeep = charToDouble(&num);
-             printf("%i ",i++);
-            if(toKeep==0)exit(1);
-              break;
+            if(toKeep==0)  break;
             (*array)[row][col] = num;
         }
         row++;
