@@ -24,7 +24,6 @@
 typedef struct POINT_LIST{
     double *head;
     struct POINT_LIST *next;
-    int size;
 } POINT_LIST;
 
 
@@ -71,11 +70,6 @@ void addPoint( POINT_LIST **point_list , double *point) {
         }
     tmp->head = point;
     tmp->next = *point_list;
-    if (*point_list == NULL) {
-        tmp->size = 1;
-    } else {
-        tmp->size = (*point_list)->size + 1;
-    }
     *point_list = tmp;
 }   
 
@@ -259,7 +253,6 @@ int charToDouble(double *num) {
  * @return None, all changed parameters are called by reference
  */
 void fileParse(double ***array, int *N, int D) {
-    int i=0;
     int row = 0;
     double num;
     int col;
@@ -277,7 +270,6 @@ void fileParse(double ***array, int *N, int D) {
             printf("Memory allocation failed in fileParse (row calloc)\n");
             exit(1);
         }
-        i=0;
         for (col = 0; col < D; col++) {
             toKeep = charToDouble(&num);
             if(toKeep==0)  break;
@@ -487,7 +479,7 @@ void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
  * @param iter Pointer to nnumber of iterations
  * @return None, all changed parameters are called by reference.
  */
-void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
+void dataVerify(int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
     if (argc < 2 || argc > 3) {
         printf("An error has occurred!\n");
         exit(1);
@@ -542,10 +534,9 @@ int main(int argc, char *argv[]) {
     int flag;
     double diff;
     int i;
-    int j;
     CLUSTER_LIST *curr;
     
-    dataVerify(stdin, argc, argv, &data, &N, &D, &K, &iter);
+    dataVerify(argc, argv, &data, &N, &D, &K, &iter);
     initializeClusters(data, &cluster_list, K, D);
     
     while (iter > 0){ 
