@@ -6,7 +6,7 @@
  * 
  * @author 322721705 and 211493176
  */
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -60,7 +60,7 @@ typedef struct CLUSTER_LIST{
  * 
  * @param point_list Pointer to a point list
  * @param point Pointer to a double array representing the point
- * @return None, all changed parameters are called by value
+ * @return None, all changed parameters are called by reference
  */
 void addPoint( POINT_LIST **point_list , double *point) {
     POINT_LIST *tmp = (POINT_LIST *)calloc(1, sizeof(POINT_LIST));
@@ -86,7 +86,7 @@ void addPoint( POINT_LIST **point_list , double *point) {
  * 
  * @param cluster_list Pointer to a cluster list
  * @param cluste Pointer to a cluster
- * @return None, all changed parameters are called by value
+ * @return None, all changed parameters are called by reference
  */
 void addCluster(CLUSTER_LIST **cluster_list , CLUSTER *cluster) {
     CLUSTER_LIST *tmp = (CLUSTER_LIST *)calloc(1, sizeof(CLUSTER_LIST));
@@ -144,7 +144,7 @@ CLUSTER *createCluster(double *point, int D){
  * This function frees all memory allocated in cluster list  by iterating on the linked list and using free()
  * 
  * @param cluster Pointer to a point list
- * @return None, all changed parameters are called by value
+ * @return None, all changed parameters are called by reference
  */
 void clearCluster(CLUSTER *cluster) {
     POINT_LIST *curr = cluster->point_list;
@@ -163,11 +163,11 @@ void clearCluster(CLUSTER *cluster) {
  * @brief Calculates and updates cenetroid of a cluster
  * 
  * This function takes a cluster, iterates over its point list and calculates the mean of each coordinate of point.
- * Then the function updates values if prev and centroid in cluster.
+ * Then the function updates value of prev and centroid in cluster.
  * 
  * @param cluster Cluster
  * @param D Dimension
- * @return None, all changed parameters are called by value
+ * @return None, all changed parameters are called by reference
  */
 void updateCentroid(CLUSTER *cluster, int D){
     int i;
@@ -185,6 +185,20 @@ void updateCentroid(CLUSTER *cluster, int D){
 }
 
 
+int find_dimension(char *line, int *D) {
+    int col = 0;
+    char *ch = line;
+    while (*ch != '\0') {
+        if (*ch == ',' || *ch == '\n') {
+        col++;
+        }
+        ch++;
+    }
+    *D = col;
+    return col;
+}
+
+
 /**
  * @brief Parses file input
  * 
@@ -197,83 +211,46 @@ void updateCentroid(CLUSTER *cluster, int D){
  * @param D Pointer to number of dimensions
  * @return None, all changed parameters are called by reference
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-void dimantion(int *D){
-    char ch;
-    while((ch = getchar()) != '\n'){
-        if (ch!= '\n'){
-            (*D)++;
-        }
-    } 
-}
-  void add_element(char  **word, int *size, int *capacity, char element) {
-    if (*size >= *capacity) {
-        *capacity*= 2;
-        *word = (char *)realloc( *word, (*capacity) * sizeof(char));
-    }
-    *word++ = &element;
-    *size++;
-    return;
-    }
-
-int charToDouble(double **num){
-    char ch;
-    int size = 0;
-    int capacity =0;
-    char *word = (char *)calloc(2, sizeof(char));
-    char *start = word;
-    if (word == NULL) {
-        printf("Memory allocation failed\n");
-        exit(1);
-    }
-    
-    while (ch = getchar() != ',' || ch != '\n' || ch != EOF ){
-    
-        add_element(&word, &size, &capacity, ch);
-    }
-    add_element(&word, &size, &capacity, '\0');
-    **num = atof(start);
-    free(start);
-    if (ch == EOF){
-        return 0;
-    }
-    return 1;
-}
-void fileParse(FILE *file, double ***array, int *N, int D) {
-    fseek(file, 0, SEEK_SET);
-    int size = 0;
-    int capacity =0;
+void fileParse(FILE *file, double ***array, int *N, int *D) {
     int row = 0;
-    int col=0;
-    char ch;
-    int toKeep=1;
-    char *word;
-    double *num = (double *)malloc(sizeof(double));
-    while(toKeep){
+    int col;
+    char *line = NULL;
+    size_t line_length = 0;
+    char *ch;  
+    char *start;
+    *array = NULL;
+    
+    while (getline(&line, &line_length, file) != -1) {
         *array = (double **)realloc(*array, (row + 1) * sizeof(double *));
-        (*array)[row] = (double *)calloc(*D ,sizeof(double));
-        for (col = 0; col < *D; col++){
-            toKeep = charToDouble(&num);
-            (*array)[row][col] = *num;
+        if (*array == NULL) {
+            printf("An error has occurred!\n");
+            exit(1);
+        }    
+        if (row == 0){
+            col = find_dimension(line, D);
+        } 
+        (*array)[row] = (double *)calloc(col, sizeof(double));
+        if ((*array)[row] == NULL) {
+            printf("An error has occurred!\n");
+            exit(1);
         }
         col = 0;
-        row++;
-       
-    }
-    free(word);
-    free(num);
-    *N = row;
-    for (col = 0; col < *N ; col++){
-        for (row = 0; row < *D ; row++){
-            printf("%f ", (*array)[col][row]);
-            printf("%d", 5);
+        ch = line;
+        start = ch;
+        while (*ch != '\0') {
+            if (*ch == ',' || *ch == '\n') {
+                *ch = '\0'; 
+                (*array)[row][col++] = atof(start);
+                start = ch + 1;
+            }
+            ch++;
         }
+        row++;
     }
-
+    *N = row;
+    free(line);
 }
+
 
 /**
  * @brief Initializes cluster list
@@ -285,7 +262,7 @@ void fileParse(FILE *file, double ***array, int *N, int D) {
  * @param cluster_list Pointer to an initiated linked list of clusters
  * @param K Number of clusters
  * @param D Number of dimensions
- * @return None, all changed parameters are called by value.
+ * @return None, all changed parameters are called by reference.
  */
 void initializeClusters(double **data, CLUSTER_LIST **cluster_list, int K, int D) {
     int i;
@@ -354,7 +331,7 @@ CLUSTER *findClosestCluster(double *point, CLUSTER_LIST *cluster_list, int D) {
  * @param cluster_list Pointer to an initiated linked list of clusters
  * @param N Number of data points
  * @param D Number of dimensions
- * @return None, all changed parameters are called by value.
+ * @return None, all changed parameters are called by reference.
  */
 void addPointsToClusters(double **data, CLUSTER_LIST *cluster_list, int N, int D) {
     int i;
@@ -399,14 +376,110 @@ void printClusters(CLUSTER_LIST *curr, int D) {
  * @return 1 if is int 0 otherwise
  */
 int isInteger(const char *arg){
+    if (*arg == '\0'){
+        return 0;
+    }
     while (*arg){
-        if (*arg < '0'|| *arg > '9'){
+        if (*arg >= '0' && *arg <= '9') {
+            arg++;
+        }
+        else if (*arg == '.') {
+            arg++;
+            while (*arg && *arg == '0') {
+                arg++;
+            }
+            if (!arg) return 1;
             return 0;
         }
-
-        *arg++;
+        else return 0;    
     }
     return 1;
+}
+
+
+
+/**
+ * @brief Frees all memory allocated in the program
+ * 
+ * This function takes the data matrix, cluster list and N and frees all allocated data
+ * 
+ * @param data 2d matrix float array with data
+ * @param N Number of lines in data
+ * @param curr Pointer to a linked list of clusters
+ * @return None
+ */
+void freeMemory(double ***data, int N, CLUSTER_LIST *curr) {
+    CLUSTER_LIST *next;
+    int i;
+    if (*data != NULL) {
+        for (i = 0; i < N; i++) {
+            free((*data)[i]);
+        }
+        free(*data);
+        *data = NULL; 
+    }
+    while (curr != NULL) {
+        next = curr->next;
+        if (curr->head != NULL) {
+            free(curr->head->centroid);
+            free(curr->head->prev);
+            clearCluster(curr->head);
+            free(curr->head);
+        }
+        free(curr);
+        curr = next;
+    }
+}
+
+
+/**
+ * @brief Verifies all user input
+ * 
+ * This function takes user input and relevant pointers, checks if there are errors in the input.
+ * If there are, program exits and prints the relevant error message.
+ * If there aren't, program puts values of K, N, D and iter to the relevant location from the input pointer argument.
+ * 
+ * @param file Stream to an input file
+ * @param argc Num of arguments given by the user
+ * @param argv All user input
+ * @param data Pointer to 2d matrix float array with data
+ * @param N Pointer to number of lines in data
+ * @param D Pointer to Number of dimentions
+ * @param iter Pointer to nnumber of iterations
+ * @return None, all changed parameters are called by reference.
+ */
+void dataVerify(FILE *file, int argc, char *argv[], double ***data, int *N, int *D, int *K, int *iter){
+    if (argc < 2 || argc > 3) {
+        printf("An error has occurred!\n");
+        exit(1);
+    }
+
+    if (!isInteger(argv[1])){
+        printf("Invalid number of clusters\n");
+        exit(1);
+    }
+    
+    *K = atoi(argv[1]);
+
+    if (argc == 3){ 
+        *iter = atoi(argv[2]);
+        if (!isInteger(argv[2]) || *iter <=0 || *iter >= 1000){
+            printf("Invalid maximum iteration!\n");
+            exit(1);
+        }
+    }
+    else *iter = 200;
+    
+    fileParse(file, data, N, D);
+
+    if (*N <= 0){
+        printf("An error has occurred!\n");
+        exit(1);
+    }
+    if (*K <= 0 || *K > *N){
+        printf("Invalid number of clusters\n");
+        exit(1);
+    }
 }
 
 
@@ -418,63 +491,26 @@ int isInteger(const char *arg){
  * 
  * @param argc num of arguments given by the user
  * @param argv all user input
- * @return 0 if 
+ * @return 0 if program ran correctly and 1 otherwise
  */
 int main(int argc, char *argv[]) {
     int K;
     int N;
-    int D = 1;
+    int D = 0;
     int iter;
     CLUSTER_LIST *cluster_list = NULL;
     double **data;
-    int flag = 0;
+    int flag;
     double diff;
     int i;
     CLUSTER_LIST *curr;
-    CLUSTER_LIST *next;
-    printf("j");
-    dimantion(&D);
-    printf()
     
-
-    if (argc < 2 || argc > 3) {
-        printf("An error has occurred!\n");
-        exit(1);
-    }
-
-    if (!isInteger(argv[1])){
-        printf("Invalid number of clusters\n");
-        exit(1);
-    }
-    
-    K = atoi(argv[1]);
-    
-    if (argc == 3){ 
-        iter = atoi(argv[2]);
-        if (!isInteger(argv[2]) || iter <=0 || iter >= 1000){
-            printf("Invalid maximum iteration!\n");
-            exit(1);
-        }
-    }
-    else iter = 200;
-    
-    fileParse(stdin, &data, &N, &D);
-
-    if (N <= 0){
-        printf("An error has occurred!\n");
-        exit(1);
-    }
-    
-    if (K <= 0 || K > N){
-        printf("Invalid number of clusters %d %d\n", K <= 0, K > N);
-        exit(1);
-    }
-    
+    dataVerify(stdin, argc, argv, &data, &N, &D, &K, &iter);
     initializeClusters(data, &cluster_list, K, D);
     
-    while (iter > 0 && flag){ 
+    while (iter > 0){ 
         addPointsToClusters(data, cluster_list, N, D);
-        flag = 1;
+        flag = 0;
         curr = cluster_list;
         while (curr != NULL){
             for (i = 0; i < D; i++){
@@ -486,24 +522,12 @@ int main(int argc, char *argv[]) {
             clearCluster(curr->head);
             curr = curr->next;
         }
+        if (!flag) break;
         iter--;
     }
 
     printClusters(cluster_list, D);
-    
-    for (i = 0; i < N; i++) {
-        free(data[i]);
-    }
-    free(data);   
+    freeMemory(&data, N, cluster_list);
 
-    curr = cluster_list;
-    while (curr != NULL) {
-        next = curr->next;
-        free(curr->head->centroid);
-        free(curr->head->prev);
-        free(curr->head);
-        free(curr);
-        curr = next;
-    }
     return 0;  
 }
