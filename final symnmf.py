@@ -1,25 +1,9 @@
+import numpy as np
+np.random.seed(1234)
+import symnmf as sym
 def ERROR():
     print("An Error Has Ocurred")
     exit(1)
-import random
-
-"""
-Initializes a matrix H with random values based on the squared average of values in DATA.
-@type DATA: list of lists of floats
-@param DATA: A 2D list representing the dataset, where each inner list is a data vector.
-@type K: int
-@param K: The number of columns in the matrix H.
-@rtype: list of lists of floats
-@returns: A matrix H with dimensions len(DATA) x K, populated with random values.
-"""
-
-def initializeH(DATA,K):
-    H[len(DATA)][K]
-    avr = [sum(sum(DATA[i][j]) for j in range (DATA[i])) for i in range(DATA)]
-    for i in range(len(DATA)):
-        for j in range(K):
-            H[i][j] = random.uniform(0, 2* avr*avr)
-    return H
 """
 Verifies argument is an int
 @type arg: String
@@ -27,6 +11,7 @@ Verifies argument is an int
 @rtype: Touple(int, int)
 @returns: First int return 1 if arg is not an integer and 1 if it is, second returns the arg in integer form.
 """
+
 def isInt(arg):
     try:
         return 0, int(arg)
@@ -40,7 +25,40 @@ def isInt(arg):
                 return 1, 0
         except:
             return 1, 0
-        
+
+
+def filetolist(filepath):
+    DATA = []
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                # Strip any leading/trailing whitespace and split by commas
+                vector = line.strip().split(',')
+                # Convert the strings to floats and add the vector to the list
+                vectors.append([float(coord) for coord in vector])
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return []
+
+    return DATA
+
+"""
+Initializes a matrix H with random values based on the squared average of values in DATA.
+@type DATA: list of lists of floats
+@param DATA: A 2D list representing the dataset, where each inner list is a data vector.
+@type K: int
+@param K: The number of columns in the matrix H.
+@rtype: list of lists of floats
+@returns: A matrix H with dimensions len(DATA) x K, populated with random values.
+"""
+
+def initializeH(N,K):
+    H[N][K]
+    avr = [sum(sum(DATA[i][j]) for j in range (DATA[i])) for i in range(DATA)]
+    for i in range(len(DATA)):
+        for j in range(K):
+            H[i][j] = random.uniform(0, 2* avr*avr)
+    return H
 
 """
     Validates the input arguments to ensure they match the required format. In additin pareses the 
@@ -72,9 +90,34 @@ def validate(args):
 
 def main():
     FILEPATH, K, GOAL = verifyData(sys.argv)
-    DATA = parsefile(FILENAME, K)
-    if GOAL == "smnmf":
-        H = initializeH(DATA)
+    DATA = filetolist(FILEPATH)
+    if (K > len(DATA)):
+        print("An Error Has Occured!")
+        return 1
+    try:
+        if GOAL == "symnmf":
+            H = initializeH(len(DATA), K)
+            res = sym.SYMNMFfunc(FILEPATH, H)
+        elif GOAL == "sym":
+            res = sym.SYM(FILEPATH)
+        elif GOAL == "ddg":
+            res = sym.DDG(FILEPATH)
+        else:
+            res = sym.NORM(data_list)
+    except:
+        print("An Error Has Occured!")
+        return 1
+    for row in res:
+        target = ",".join([f"{x:.4f}" for x in row])
+        print(target)
+    return 0
+   
+
+
+    
+
+ 
+    
     
 
 
