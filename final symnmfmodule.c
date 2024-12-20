@@ -1,239 +1,305 @@
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <stdio.h>
+#include "Python.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
-#include <symnmf.c>
-
+#include "symnmf.h"
 #define EPSILON 0.0001
-#define MAX_ITERATIONS 300
+#define MAX_ITER 300
 #define BETA 0.5
 
-Matrix *H;
-Matrix *A;
-Matrix *W;
-Matrix *D;
-double BETA;
-int j;
-int i;
-int n;
-int m;
+char *py_string_to_c(PyObject *py_string) {
+    if (!PyUnicode_Check(py_string)) {
+        PyErr_SetString(PyExc_TypeError, "Input must be a string");
+        return NULL;
+    }
+    const char *str = PyUnicode_AsUTF8(py_string);
+    if (str == NULL) {
+        PyErr_SetString(PyExc_ValueError, "Failed to convert Python string to UTF-8");
+        return NULL;
+    }
+    char *c_string = strdup(str);
+    if (c_string == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for C string");
+        return NULL;
+    }
+    return c_string;
+}
+/**
+ * @brief Converts a C matrix (2D array) to a Python list of lists.
+ *
+ * @param matrix A pointer to the C matrix (2D array) to convert.
+ * @param rows The number of rows in the matrix.
+ * @param cols The number of columns in the matrix.
+ * @return A Python object representing the matrix as a list of lists.
+ */
+PyObject *Matrixtopyobject(Matrix *matrix) {
+    int rows = matrix->rows;
+    int cols = matrix->cols;
+    PyObject *py_matrix = PyList_New(rows);  // Create the outer Python list
+    if (!py_matrix) {
+        PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for the Python matrix.");
+        return NULL;
+    }
+    for (int i = 0; i < rows; i++) {
+        PyObject *py_row = PyList_New(cols);  // Create a Python list for each row
+        if (!py_row) {
+            PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for a Python row.");
+            Py_DECREF(py_matrix);  // Free the partially created matrix
+            return NULL;
+        }
+        for (int j = 0; j < cols; j++) {
+            PyObject *py_value = PyFloat_FromDouble(matrix->entries[i][j]);  // Convert C double to Python float
+            if (!py_value) {
+                PyErr_SetString(PyExc_MemoryError, "Failed to allocate memory for a Python value.");
+                Py_DECREF(py_row);  
+                Py_DECREF(py_matrix);  
+                return NULL;
+            }
+            PyList_SET_ITEM(py_row, j, py_value);  // Add the value to the Python row
+        }
 
-int ColumnSize(PyObject *DATA) {
-    PyObject *rowObj = PyList_GetItem(DATA, 0);
+        PyList_SET_ITEM(py_matrix, i, py_row);  // Add the row to the Python matrix
+    }
+
+    return py_matrix;
+}
+void copy_data(double **DATA, double **target, int N,int M){
+    int i, j;
+    for(i = 0; i < N; i++){
+        for(j = 0; j < M; j++){
+            target[i][j] = DATA[i][j];
+        }
+    }
+
+}
+
+int ColumnSize(PyObject *DATA_py) {
+    PyObject *rowObj;
+
+    rowObj = PyList_GetItem(DATA_py, 0);
+    if (!rowObj) {
+        return 0; 
+    }
     if (!PyList_Check(rowObj)) {
-        PyErr_SetString(PyExc_TypeError, "The input list must contain lists");
-        return -1; 
+        return 0;  // Error: Not a list of lists
     }
     return (int)PyList_Size(rowObj);
 }
-Matrix *covetMPyToMatrixEntries(PyObject *DATA_py){
-    Matrix *M;
-      if (!PyArg_ParseTuple(args, "O", &DATA_py)) {
-        return NULL;
-    }
-    n = (int)PyList_Size(obj);
-    if (n == 0) {
-        PyErr_SetString(PyExc_ValueError, "The input list is empty");
-        return NULL;
-    }
-    m = ColumnSize(obj, 0);
-    if (m == 0) {
-        PyErr_SetString(PyExc_ValueError, "The input list is empty");
-        return NULL;
-    }
-    M -> entries = newMatrix(n, m);
-    M -> entries = PyObjectToMatrix(&DATA_py, &M);
-    transposedMatrix(&M);
-    return M;
-}
-
-
-int get_vec(PyObject *list, int i, Matrix *M) {
-for(j =0; j < M -> cols; j++){
-    PyObject *element = PyList_GetItem(sublist, j);
-if (!element || !PyFloat_Check(element)) {
-    return 0;
-}
-M -> entries[i][j] = PyFloat_AsDouble(element);
-return 1;
-}
-}
-
-
-
-
-/**
- * @brief Convert a Python list of lists to a matrix.
- * 
- * This function converts a Python list of lists (where each inner list represents a row of the matrix) 
- * to a `Matrix` structure.
- * 
- * @param obj A Python object representing a list of lists.
- * @return A pointer to the `Matrix` structure, or NULL if an error occurs.
- */
-int PyobjectToMatrix(PyObject *DATA, Matrix *M) {
-    Pyobject *vec;
-    for (i = 0; i < M -> rows ; i++) {
-         vec = PyList_GetItem(DATA, i)
-         if (!vec || !PyList_Check(vec)) {
-            PyErr_SetString(PyExc_TypeError, "Expected a list of lists.");
+int Data_py_to_c(PyObject *DATA_py, Matrix *M) {
+    int i, j;
+    PyObject *row,*value;
+    for (i = 0; i < M->rows; i++) {
+        row = PyList_GetItem(DATA_py, i);
+        if (!PyList_Check(row)) {
+            PyErr_SetString(PyExc_TypeError, "Each row in the matrix must be a list");
+            free_matrix(M);
+            return 0;
         }
-        if (!get_vec(vec , i, &M)){
-                ERROR();
+        for (j = 0; j < M->cols; j++) {
+            value = PyList_GetItem(row, j);
+            if (!PyFloat_Check(value)) {
+                PyErr_SetString(PyExc_TypeError, "Matrix elements must be floats");
+                free_matrix(M);
                 return 0;
+            }
+            M->entries[i][j] = PyFloat_AsDouble(value);  // Corrected to access the matrix correctly
         }
-    }
-    if (!TransposedMatrix(&M)){
-        ERROR();
-        return 0;
     }
     return 1;
 }
 
-
-
-int updateH (Matrix *H, Matrix *W, BETA) {
-    n = H -> rows;
-    double A[n][n] = MatrixMult(MatrixMult(H.entries , H.transposed),H.entries);
-    double C[n][n] = MatrixMult(W, H);
-    for(i = 0; i < n; i++){
-        for(j = 0; j < m; j++){
-            H -> entries[i][j] = H -> entries[i][j](1-BETA + BETA* (C[i][j]/ A[i][j]));
-        }
-    }
-    H.tranposed = TransposedMatrix(H);
-    free(A);
-    free(C);
-    return H;
-}
-
-Matrix SymNMFfunc(Matrix *H, Matrix *A){
-    int iter, error;
-    double PREV[H -> rows][H -> rows] = H.entries;
-    W -> entries = normalizedSYM(&A);
-    while (iter < MaxIter){
-        H -> entries = updateH(&H, &W, BETA);
-        if (distanceMatrix(&H ,PREV) < EPSILON){
-            return H;
-        } 
-        iter++;
-        
-    }
-    return H;
-}
-
-static PyObject* SYMNMF_module(PyObject *args){
-    PyObject *H_py;
-    PyObject *DATA_py;
-    PyObject *retured;
-    Matrix *prossesed;
-    Matrix *H;
-    Matrix *A;
-    Matrix *DATA;
-
-    
-    if(!PyobjectToMatrix(H_py, &H) || !PyobjectToMatrix(DATA_py, &DATA) ){
-        
-        freeMatrix(&H);
-        freeMatrix(&DATA);
-        return NULL;
-    }
-    A = SYM(&DATA);
-    if (A == NULL) {
-        freeMatrix(A);
-        return NULL;
-    }
-    prossesed = SymNMFfunc(&H, &A);
-    if (prossesed == NULL) {
-        freeMatrix(A);
-        freeMatrix(H);
-        FreeMatrix(prossesed);
-        return NULL;
-    }
-    returned = matrixToPyObject(prossesed);
-    freeMatrix(prossesed);
-    return returned;
-}
-static PyObject* SYM_moudule(PyObject *args) {
-    PyObject *DATA_py, A_py;
-    Matrix *DATA;
-    Matrix*A;
-    if (!PyArg_ParseTuple(args, "O", &DATA_py)) {
-        return NULL;
-    }
-   if(!PyobjectToMatrix(DATA_py, &DATA)) return NULL;
-    
-    A = &SYM(DATA);
-    A_py = MatrixToPyobject(A);
-    return A_py;
-}
-    
-static DDG_module(PyObject *args){
-    PyObject *DATA_py, D_py;
-    Matrix *D;
-    Matrix *DATA;
-    Matrix *W;
-    if (!PyArg_ParseTuple(args, "O", &DATA)) {
-        return NULL;
-    }
-    PyobjectToMatrix(DATA_, &DATA);
-    A = &SYM(&DATA);
-    A -> entries = &SYM(DATA);
-    D = &DDG(&A);
-    W ->entries = newMatrix(A ->rows, A ->cols);
-    W ->entries MatixMult(D -> transposed, MatrixMult(A -> entries, D -> entries));
-    
-    return MatrixToPyobject(W);
-}
-
-
-static PyObject *NORM_module(PyObject *args){
-    Pyobject *DATA_py;
-    Matrix A, D;
-    if (!PyArg_ParseTuple(args, "O", &DATA_py)) {
-        PyErr_SetString(PyExc_ValueError, "Failed to parse arguments.");
-        return NULL;
-    }
-    n = (int)PyList_Size(obj);
+Matrix *convertMPyToMatrix(PyObject *DATA_py){
+    int n;
+    int m;
+    Matrix *M;
+    n = (int)PyList_Size(DATA_py);
     if (n == 0) {
         PyErr_SetString(PyExc_ValueError, "The input list is empty");
         return NULL;
     }
-    m = ColumnSize(obj, 0);
-    DATA -> entries = initializeMatrix(n, m);
-    DATA->entries = PyobjectToMatrix(DATA_py);
-    TransposedMatrix(DATA);
-    A -> entries = initializeMatrix(n, n);
-    A -> entries= &SYM(DATA);
-    D -> entries = initializeMatrix(1,A.rows);
+    m = ColumnSize(DATA_py);
+    if (m == 0) {
+        PyErr_SetString(PyExc_ValueError, "The input list is empty");
+        return NULL;
+    }
+    M = newMatrix(n, m);
+    if (M == NULL){
+        free_matrix(M);
+        return NULL;
+    }
+    Data_py_to_c(DATA_py, M);
+    if(M -> entries == NULL){
+        free_matrix(M);
+    }
+    return M;
+}
+void printt(double **matrix, int n,int m){
+    int i, j;
+    for(i = 0; i < n; i++){
+        for (j = 0; j < m - 1; j++){
+            printf("%.4f,", matrix[i][j]);
+        }
+        printf("%.4f\n", matrix[i][m - 1]);
+    }
 }
 
 
-// Function to free the allocated 2D array
-void freeCArray(double** cArray, int n) {
-    for (int i = 0; i < n; i++) {
-        free(cArray[i]);
+Matrix *updateH (Matrix *H, Matrix *W) {
+    int i,j;
+    double **tmp = alocateMemoForEntries(H->rows, H->cols);
+    double **tmp_t = NULL;
+    Matrix *returned = newMatrix(H->rows, H->cols); 
+    double **A = NULL, **B = NULL, **C = NULL; 
+    print_matrix(H);
+    printf("\n");
+    A = MatrixMult(H->entries, H->transposed, W->cols, W->cols, H->cols);
+    printt(A, H->rows, H->rows);
+    B = MatrixMult(A, H->entries, W->cols ,H->cols, W->cols);
+    C = MatrixMult(W->entries, H->entries, W->cols, H->cols, W->cols);
+    if (A == NULL || B == NULL || C == NULL){
+        free_data(A, W->cols);
+        free_data(B, W->cols);
+        free_data(C, W->cols);
+        return NULL;
+       }
+    for(i = 0; i < H->rows; i++){
+        for(j = 0; j < H->cols; j++){
+            tmp[i][j] = fabs(1-0.5 + 0.5* (C[i][j]/ B[i][j]));
+        }
     }
-    free(cArray);
+    free_data(A, W->cols);
+    free_data(B, W->cols);
+    free_data(C, W->cols);
+    returned->entries = tmp;
+    tmp_t = TransposedMatrix(returned);
+    if (!tmp_t ){
+        return NULL;
+    }
+    returned->transposed = tmp_t;
+    return returned;
+}
+
+Matrix *SYMNMFfunc(Matrix *H, Matrix *W){
+    int iter = 0;
+    Matrix *updated = (Matrix *)malloc(sizeof(Matrix));
+    Matrix *prev = (Matrix *)malloc(sizeof(Matrix)); 
+    double err;
+    prev = H;
+    while (iter < MAX_ITER){
+        
+        updated = updateH(prev,W);
+
+        if(!updated){
+            return NULL;
+        }
+        err = MatrixDistance(updated, prev->entries);
+        if ( err == -1){
+            free_matrix(prev);
+            free_matrix(updated);
+            return NULL;
+        }
+        
+        if (err < EPSILON){
+            free_matrix(prev);
+            return updated;
+        }  
+        iter++;
+        free_matrix(prev);
+        prev = (Matrix *)malloc (sizeof(Matrix));
+        prev = updated;
+    } 
+    free_matrix(prev);
+    return updated;
+}
+
+PyObject* SYMNMF(PyObject *self, PyObject *args){
+    PyObject *H_py, *W_py, *returned;
+    Matrix *H = (Matrix *)malloc(sizeof(Matrix));
+    Matrix *W =(Matrix *)malloc(sizeof(Matrix));
+    Matrix *returned_c = (Matrix *)malloc(sizeof(Matrix));
+    double **tmp1 = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &W_py, &H_py)) {
+        return NULL;
+    }
+    H =convertMPyToMatrix(H_py);
+    W = convertMPyToMatrix(W_py);
+    if(H == NULL || W == NULL){
+        PyErr_SetString(PyExc_MemoryError, "Failed to convert input matrices");
+        free_matrix(H); 
+        free_matrix(W);
+        return NULL;
+    } 
+    tmp1= TransposedMatrix(H);
+    if(!tmp1){
+        free_matrix(H);
+        free_matrix(W);
+        PyErr_SetString(PyExc_MemoryError, "Failed to convert input matrices");
+        return NULL;
+    }
+    H->transposed = tmp1;
+    returned_c = SYMNMFfunc(H, W);
+    if (returned_c == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to convert matrix to Python object");
+        free_matrix(W); 
+        return NULL;
+    }
+    free_matrix(W);
+    returned = Matrixtopyobject(returned_c);
+    if (returned == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to convert matrix to Python object");
+        free_matrix(returned_c);
+        return NULL;
+    }
+   
+    Py_INCREF(returned);
+    free_matrix(returned_c);
+    return returned;
+}
+
+
+
+
+PyObject* processGOAL(PyObject *self, PyObject *args) {
+    const char *GOAL;
+    const char *FILEPATH;
+    PyObject *result_py;
+    Matrix *result = (Matrix *)malloc(sizeof(Matrix)); 
+    if (!PyArg_ParseTuple(args, "ss", &GOAL, &FILEPATH)) {
+        return NULL;
+    }
+    Matrix *DATA = (Matrix *)malloc(sizeof(Matrix));
+    DATA = parsefiletoMatrix(FILEPATH);
+    Matrix *A = (Matrix *)malloc(sizeof(Matrix)); 
+    A = SYM (DATA);
+    
+     if (strcmp(GOAL, "sym") == 0) {
+        result = A;
+    } 
+    else if (strcmp(GOAL, "ddg") == 0) {
+        result = DDG(A);
+        free_matrix(A);
+    } 
+    else if (strcmp(GOAL, "norm") == 0) {
+        result = normalizedSYM(A);
+        free_matrix(A);
+    } 
+    else {
+        PyErr_SetString(PyExc_ValueError, "Invalid goal");
+        free_matrix(result);
+        return NULL;}
+    result_py = Matrixtopyobject(result);
+    free_matrix(result);
+    return result_py;
 }
 static PyMethodDef symnmfMethods[] = {
-    {"symnmf",  
-      (PyCFunction) symnmf,  
+    {"processGOAL",  
+      (PyCFunction) processGOAL,  
       METH_VARARGS,           
-      PyDoc_STR("Perform the symnmf algorithm and output the clusters")},
-    {"sym",  
-      (PyCFunction) sym,  
+      PyDoc_STR("Perform the goal that is given by the user")},
+    {"SYMNMF",  
+    (PyCFunction) SYMNMF,  
       METH_VARARGS,           
-      PyDoc_STR("Calculate and output the similarity matrix")},
-    {"ddg",  
-      (PyCFunction) ddg,  
-      METH_VARARGS,           
-      PyDoc_STR("Calculate and output the Diagonal Degree Matrix")},
-    {"norm",  
-      (PyCFunction) norm,  
-      METH_VARARGS,           
-      PyDoc_STR("Calculate and output the normalized similarity matrix")},
+      PyDoc_STR("Perform the SYMNMF goal that is given by the user")},
     {NULL, NULL, 0, NULL} 
 };
 
@@ -256,10 +322,6 @@ PyMODINIT_FUNC PyInit_symnmf(void)
     if (!m) {
         return NULL;
     }
-    
+    PyModule_AddFunctions(m, symnmfMethods);
     return m;
 }
-
-
-
-        
